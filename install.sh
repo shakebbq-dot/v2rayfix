@@ -531,12 +531,29 @@ nginx_install() {
 }
 
 ssl_install() {
+    # ========== 修复15: 修复netcat包名兼容性问题 ==========
     if [[ "${ID}" == "centos" ]]; then
         ${INS} install socat nc -y
-	elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 12 ]]; then
-		${INS} install socat netcat-openbsd -y
+    elif [[ "${ID}" == "debian" ]] || [[ "${ID}" == "ubuntu" ]]; then
+        # Debian/Ubuntu系统中，netcat-openbsd提供nc命令，在所有版本中都可用
+        # 如果netcat-openbsd不可用，尝试netcat-traditional或直接使用nc
+        if ${INS} install socat netcat-openbsd -y 2>/dev/null; then
+            echo -e "${OK} ${GreenBG} 已安装 socat 和 netcat-openbsd ${Font}"
+        elif ${INS} install socat netcat-traditional -y 2>/dev/null; then
+            echo -e "${OK} ${GreenBG} 已安装 socat 和 netcat-traditional ${Font}"
+        else
+            # 最后的备选方案：尝试安装提供nc命令的包
+            ${INS} install socat -y
+            # 检查nc命令是否已存在
+            if ! command -v nc >/dev/null 2>&1; then
+                echo -e "${Error} ${RedBG} 无法安装netcat，但socat已安装。某些功能可能受限。${Font}"
+            else
+                echo -e "${OK} ${GreenBG} 已安装 socat，nc命令已存在 ${Font}"
+            fi
+        fi
     else
-        ${INS} install socat netcat -y
+        # 其他系统尝试通用安装方式
+        ${INS} install socat nc -y 2>/dev/null || ${INS} install socat netcat-openbsd -y 2>/dev/null || ${INS} install socat -y
     fi
     judge "安装 SSL 证书生成脚本依赖"
 
