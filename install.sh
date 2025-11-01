@@ -532,23 +532,30 @@ nginx_install() {
 
 ssl_install() {
     # ========== 修复15: 修复netcat包名兼容性问题 ==========
+    # netcat是虚拟包，需要明确选择netcat-openbsd或netcat-traditional
+    # 推荐使用netcat-openbsd（更现代、功能更全面）
     if [[ "${ID}" == "centos" ]]; then
         ${INS} install socat nc -y
     elif [[ "${ID}" == "debian" ]] || [[ "${ID}" == "ubuntu" ]]; then
-        # Debian/Ubuntu系统中，netcat-openbsd提供nc命令，在所有版本中都可用
-        # 如果netcat-openbsd不可用，尝试netcat-traditional或直接使用nc
-        if ${INS} install socat netcat-openbsd -y 2>/dev/null; then
-            echo -e "${OK} ${GreenBG} 已安装 socat 和 netcat-openbsd ${Font}"
-        elif ${INS} install socat netcat-traditional -y 2>/dev/null; then
-            echo -e "${OK} ${GreenBG} 已安装 socat 和 netcat-traditional ${Font}"
+        # Debian/Ubuntu系统：明确选择netcat-openbsd（推荐）
+        echo -e "${OK} ${GreenBG} 正在安装 socat 和 netcat-openbsd... ${Font}"
+        if ${INS} install -y socat netcat-openbsd; then
+            echo -e "${OK} ${GreenBG} 已成功安装 socat 和 netcat-openbsd ${Font}"
         else
-            # 最后的备选方案：尝试安装提供nc命令的包
-            ${INS} install socat -y
-            # 检查nc命令是否已存在
-            if ! command -v nc >/dev/null 2>&1; then
-                echo -e "${Error} ${RedBG} 无法安装netcat，但socat已安装。某些功能可能受限。${Font}"
+            # 如果netcat-openbsd安装失败，尝试netcat-traditional
+            echo -e "${OK} ${GreenBG} netcat-openbsd安装失败，尝试netcat-traditional... ${Font}"
+            if ${INS} install -y socat netcat-traditional; then
+                echo -e "${OK} ${GreenBG} 已成功安装 socat 和 netcat-traditional ${Font}"
             else
-                echo -e "${OK} ${GreenBG} 已安装 socat，nc命令已存在 ${Font}"
+                # 最后的备选方案：只安装socat（SSL证书生成主要依赖socat）
+                echo -e "${Error} ${RedBG} netcat安装失败，只安装socat... ${Font}"
+                ${INS} install -y socat
+                # 检查nc命令是否已存在
+                if command -v nc >/dev/null 2>&1; then
+                    echo -e "${OK} ${GreenBG} socat已安装，nc命令已存在 ${Font}"
+                else
+                    echo -e "${Error} ${RedBG} 警告：netcat未安装，但socat已安装。某些功能可能受限。${Font}"
+                fi
             fi
         fi
     else
