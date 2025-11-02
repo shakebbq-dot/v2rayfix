@@ -67,7 +67,30 @@ random_num=$((RANDOM%12+4))
 #生成伪装路径
 camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
 
-THREAD=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)
+# ========== 修复16: 智能计算编译线程数（避免内存不足） ==========
+# 检测CPU核心数
+CPU_CORES=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)
+# 检测可用内存（MB）
+AVAILABLE_MEM=$(free -m | awk '/^Mem:/{print $7}')
+# 智能调整编译线程数：每线程至少需要1GB内存，最多使用可用内存的80%
+# jemalloc编译比较占用内存，建议每个线程至少1.5GB
+MEM_BASED_THREAD=$((AVAILABLE_MEM / 1536))  # 1.5GB per thread
+# 取CPU核心数和内存限制的较小值，但至少为1
+if [ $MEM_BASED_THREAD -lt 1 ]; then
+    MEM_BASED_THREAD=1
+fi
+if [ $CPU_CORES -lt $MEM_BASED_THREAD ]; then
+    THREAD=$CPU_CORES
+else
+    THREAD=$MEM_BASED_THREAD
+fi
+# 如果可用内存小于2GB，强制使用单线程编译
+if [ $AVAILABLE_MEM -lt 2048 ]; then
+    THREAD=1
+    echo -e "${Error} ${RedBG} 检测到可用内存不足2GB，将使用单线程编译以避免内存不足 ${Font}"
+else
+    echo -e "${OK} ${GreenBG} 检测到CPU核心数: ${CPU_CORES}, 可用内存: ${AVAILABLE_MEM}MB, 将使用 ${THREAD} 线程编译 ${Font}"
+fi
 
 source '/etc/os-release'
 
@@ -481,13 +504,55 @@ nginx_install() {
     [[ -d "$nginx_dir" ]] && rm -rf ${nginx_dir}
 
     echo -e "${OK} ${GreenBG} 即将开始编译安装 jemalloc ${Font}"
+    echo -e "${OK} ${GreenBG} 使用 ${THREAD} 个编译线程（基于可用内存智能调整） ${Font}"
     sleep 2
 
     cd jemalloc-${jemalloc_version} || exit
     ./configure
     judge "编译检查"
-    make -j "${THREAD}" && make install
-    judge "jemalloc 编译安装"
+    
+    # ========== 修复17: 改进jemalloc编译，添加内存检查和降级方案 ==========
+    # 检查可用内存是否足够
+    CURRENT_MEM=$(free -m | awk '/^Mem:/{print $7}')
+    MIN_REQUIRED_MEM=$((THREAD * 1536))  # 每个线程至少需要1.5GB
+    
+    if [ $CURRENT_MEM -lt $MIN_REQUIRED_MEM ]; then
+        echo -e "${Error} ${RedBG} 警告：可用内存 ${CURRENT_MEM}MB 可能不足以支持 ${THREAD} 线程编译 ${Font}"
+        echo -e "${OK} ${GreenBG} 尝试减少编译线程数或使用单线程编译... ${Font}"
+        # 重新计算线程数
+        SAFE_THREAD=$((CURRENT_MEM / 1536))
+        if [ $SAFE_THREAD -lt 1 ]; then
+            SAFE_THREAD=1
+        fi
+        THREAD=$SAFE_THREAD
+        echo -e "${OK} ${GreenBG} 已调整为 ${THREAD} 线程编译 ${Font}"
+    fi
+    
+    # 尝试编译，如果失败则降级为单线程
+    if ! make -j "${THREAD}" 2>&1; then
+        echo -e "${Error} ${RedBG} 多线程编译失败，尝试单线程编译... ${Font}"
+        make clean 2>/dev/null || true
+        if ! make -j 1; then
+            echo -e "${Error} ${RedBG} jemalloc 编译失败，可能由于内存不足或系统资源限制 ${Font}"
+            echo -e "${OK} ${GreenBG} 可以选择跳过jemalloc安装，继续安装Nginx（性能可能略有影响）${Font}"
+            read -rp "是否跳过jemalloc安装并继续？(Y/N，默认N): " skip_jemalloc
+            if [[ "${skip_jemalloc}" =~ ^[Yy]$ ]]; then
+                echo -e "${OK} ${GreenBG} 跳过jemalloc安装，继续安装Nginx ${Font}"
+                # 创建占位库目录以避免后续配置错误
+                mkdir -p /usr/local/lib
+                ldconfig 2>/dev/null || true
+            else
+                judge "jemalloc 编译安装"
+            fi
+        else
+            make install
+            judge "jemalloc 编译安装"
+        fi
+    else
+        make install
+        judge "jemalloc 编译安装"
+    fi
+    
     echo '/usr/local/lib' >/etc/ld.so.conf.d/local.conf
     ldconfig
 
@@ -495,6 +560,16 @@ nginx_install() {
     sleep 4
 
     cd ../nginx-${nginx_version} || exit
+
+    # ========== 修复18: 根据jemalloc是否安装成功调整Nginx编译选项 ==========
+    # 检查jemalloc是否安装成功
+    if [ -f /usr/local/lib/libjemalloc.so ] || [ -f /usr/local/lib/libjemalloc.so.2 ]; then
+        LD_OPT="-ljemalloc"
+        echo -e "${OK} ${GreenBG} 检测到jemalloc已安装，Nginx将使用jemalloc进行内存管理 ${Font}"
+    else
+        LD_OPT=""
+        echo -e "${OK} ${GreenBG} jemalloc未安装，Nginx将使用系统默认内存管理 ${Font}"
+    fi
 
     ./configure --prefix="${nginx_dir}" \
         --with-http_ssl_module \
@@ -508,7 +583,7 @@ nginx_install() {
         --with-http_secure_link_module \
         --with-http_v2_module \
         --with-cc-opt='-O3' \
-        --with-ld-opt="-ljemalloc" \
+        --with-ld-opt="${LD_OPT}" \
         --with-openssl=../openssl-"$openssl_version"
     judge "编译检查"
     make -j "${THREAD}" && make install
