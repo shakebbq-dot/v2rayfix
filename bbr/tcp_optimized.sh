@@ -297,7 +297,7 @@ while true; do
 	echo "8. 退出"
 	echo ""
 	
-	read -p "请选择 [1-8]: " choice
+	read -p "Please choose [1-8]: " choice
 	case $choice in
 		1) install_latest_kernel ;;
 		2) enable_bbr ;;
@@ -307,7 +307,7 @@ while true; do
 		6) install_magic_bbr ;;
 		7) update_bbr_config ;;
 		8) exit 0 ;;
-		*) echo -e "${Error} 无效选择，请重新输入" ; sleep 2 ; continue ;;
+		*) echo -e "${Error} Invalid choice, please re-enter" ; sleep 2 ; continue ;;
 	esac
 	
 	# Return to main menu
