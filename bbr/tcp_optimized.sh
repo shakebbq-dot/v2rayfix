@@ -4,14 +4,14 @@ export PATH
 
 #=================================================
 # System Required: Ubuntu 18+, Debian 10+, CentOS 8+
-# Description: Modern TCP BBR Optimization Script
-# Version: 2.0.0
+# Description: Advanced TCP BBR Optimization Script
+# Version: 3.0.0
 # Author: Network Optimization Tool
 # GitHub: https://github.com/shakebbq-dot/v2rayfix/raw/main/bbr
-# Features: Latest Kernel BBR, System Tuning, Security
+# Features: BBR/BBRPlus/MagicBBR, Kernel Update, System Tuning
 #=================================================
 
-sh_ver="2.0.0"
+sh_ver="3.0.0"
 Green_font_prefix="\033[32m"
 Red_font_prefix="\033[31m" 
 Font_color_suffix="\033[0m"
@@ -167,29 +167,147 @@ safe_cleanup(){
 
 # Main menu
 main_menu(){
-	clear
-	echo -e "=== TCP Network Optimization Script v${sh_ver} ==="
-	echo "1. Install latest stable kernel"
-	echo "2. Enable BBR acceleration"
-	echo "3. System performance optimization"
-	echo "4. Check BBR status"
-	echo "5. Exit"
-	echo ""
-	
-	read -p "Please choose [1-5]: " choice
-	case $choice in
-		1) install_latest_kernel ;;
-		2) enable_bbr ;;
-		3) optimize_system ;;
-		4) check_bbr_status ;;
-		5) exit 0 ;;
-		*) echo "Invalid choice" ;;
-	esac
+	while true; do
+		clear
+		echo -e "=== TCP网络优化脚本 v${sh_ver} ==="
+		echo "1. 安装最新稳定内核"
+		echo "2. 启用BBR加速"
+		echo "3. 系统性能优化"
+		echo "4. 检查BBR状态"
+		echo "5. 安装BBRPlus (增强版BBR)"
+		echo "6. 安装魔改BBR (修改版BBR)"
+		echo "7. 更新BBR配置"
+		echo "8. 退出"
+		echo ""
+		
+		read -p "请选择 [1-8]: " choice
+		case $choice in
+			1) install_latest_kernel ; break ;;
+			2) enable_bbr ; break ;;
+			3) optimize_system ; break ;;
+			4) check_bbr_status ; break ;;
+			5) install_bbrplus ; break ;;
+			6) install_magic_bbr ; break ;;
+			7) update_bbr_config ; break ;;
+			8) exit 0 ;;
+			*) echo -e "${Error} 无效选择，请重新输入" ; sleep 1 ;;
+		esac
+	done
 	
 	# Return to main menu
 	echo ""
-	read -p "Press Enter to return to main menu..."
-	# Removed recursive main_menu call to prevent stack overflow and flashing
+	read -p "按回车键返回主菜单..."
+}
+
+# Install BBRPlus (Enhanced BBR)
+install_bbrplus(){
+    echo -e "${Info} Installing BBRPlus..."
+    
+    # Check if system supports BBRPlus
+    if [[ "${release}" != "ubuntu" && "${release}" != "debian" ]]; then
+        echo -e "${Error} BBRPlus only supports Ubuntu/Debian systems"
+        return 1
+    fi
+    
+    # Install required packages
+    apt-get update
+    apt-get install -y build-essential libncurses5-dev libssl-dev bc
+    
+    # Download and compile BBRPlus kernel
+    echo -e "${Info} Downloading BBRPlus kernel source..."
+    cd /tmp
+    wget -O bbrplus.tar.gz https://github.com/cx9208/bbrplus/archive/refs/heads/master.tar.gz
+    tar -xzf bbrplus.tar.gz
+    cd bbrplus-master
+    
+    # Compile and install
+    echo -e "${Info} Compiling BBRPlus kernel..."
+    make -j$(nproc)
+    make modules_install
+    make install
+    
+    # Update grub
+    update-grub
+    
+    echo -e "${Info} BBRPlus installed! Reboot required."
+    read -p "Reboot now? [Y/n]" choice
+    case "$choice" in 
+        y|Y|'' ) reboot ;;
+        * ) echo "Please reboot manually" ;;
+    esac
+}
+
+# Install Magic BBR (Modified BBR)
+install_magic_bbr(){
+    echo -e "${Info} Installing Magic BBR..."
+    
+    # Magic BBR uses different congestion control parameters
+    echo -e "${Info} Configuring Magic BBR parameters..."
+    
+    # Remove old configurations
+    sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
+    sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+    
+    # Magic BBR specific configuration
+    echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+    echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+    
+    # Magic BBR optimized parameters
+    cat >> /etc/sysctl.conf << EOF
+# Magic BBR Optimization
+net.ipv4.tcp_window_scaling = 1
+net.ipv4.tcp_timestamps = 1
+net.ipv4.tcp_sack = 1
+net.ipv4.tcp_ecn = 2
+net.ipv4.tcp_frto = 2
+net.ipv4.tcp_fastopen = 3
+net.ipv4.tcp_mtu_probing = 1
+net.ipv4.tcp_congestion_control = bbr
+net.core.default_qdisc = fq
+EOF
+    
+    # Apply configurations
+    sysctl -p
+    
+    echo -e "${Info} Magic BBR installed and configured!"
+}
+
+# Update BBR configuration
+update_bbr_config(){
+    echo -e "${Info} Updating BBR configuration..."
+    
+    # Backup current config
+    cp /etc/sysctl.conf /etc/sysctl.conf.backup.$(date +%Y%m%d%H%M%S)
+    
+    # Remove old BBR configurations
+    sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
+    sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
+    sed -i '/# Magic BBR Optimization/d' /etc/sysctl.conf
+    sed -i '/# TCP BBR Configuration/d' /etc/sysctl.conf
+    
+    # Add latest optimized configuration
+    cat >> /etc/sysctl.conf << EOF
+# Latest BBR Optimization (Updated: $(date))
+net.core.default_qdisc = cake
+net.ipv4.tcp_congestion_control = bbr
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.core.rmem_default = 262144
+net.core.wmem_default = 262144
+net.core.somaxconn = 65535
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_wmem = 4096 65536 16777216
+net.ipv4.tcp_mem = 65536 131072 262144
+net.ipv4.tcp_max_syn_backlog = 65535
+net.ipv4.tcp_max_tw_buckets = 2000000
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+EOF
+    
+    # Apply configurations
+    sysctl -p
+    
+    echo -e "${Info} BBR configuration updated successfully!"
 }
 
 # Script entry point
