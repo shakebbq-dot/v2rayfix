@@ -15,11 +15,11 @@ sh_ver="2.0.0"
 Green_font_prefix="\033[32m"
 Red_font_prefix="\033[31m" 
 Font_color_suffix="\033[0m"
-Info="${Green_font_prefix}[信息]${Font_color_suffix}"
-Error="${Red_font_prefix}[错误]${Font_color_suffix}"
-Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
+Info="${Green_font_prefix}[Info]${Font_color_suffix}"
+Error="${Red_font_prefix}[Error]${Font_color_suffix}"
+Tip="${Green_font_prefix}[Note]${Font_color_suffix}"
 
-# 检查系统信息
+# Check system information
 check_sys(){
 	if [[ -f /etc/redhat-release ]]; then
 		release="centos"
@@ -28,7 +28,7 @@ check_sys(){
 	elif grep -Eqi "ubuntu" /etc/issue; then
 		release="ubuntu"
 	else
-		echo -e "${Error} 不支持此操作系统！" && exit 1
+		echo -e "${Error} Unsupported OS!" && exit 1
 	fi
 	
 	bit=$(uname -m)
@@ -37,60 +37,60 @@ check_sys(){
 	elif [[ ${bit} == "i386" || ${bit} == "i686" ]]; then
 		bit="x86"
 	else
-		echo -e "${Error} 不支持此架构：${bit}！" && exit 1
+		echo -e "${Error} Unsupported architecture: ${bit}!" && exit 1
 	fi
 }
 
-# 安装最新稳定版内核（支持BBR）
+# Install latest stable kernel (with BBR support)
 install_latest_kernel(){
-	echo -e "${Info} 正在安装最新稳定版内核..."
+	echo -e "${Info} Installing latest stable kernel..."
 	
 	if [[ "${release}" == "ubuntu" || "${release}" == "debian" ]]; then
-		# Ubuntu/Debian: 使用官方仓库的最新稳定内核
+		# Ubuntu/Debian: Use official repository
 		apt-get update
 		apt-get install -y --install-recommends linux-generic-hwe-20.04
 		
 	elif [[ "${release}" == "centos" ]]; then
-		# CentOS: 使用ELRepo仓库
+		# CentOS: Use ELRepo repository
 		rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
-		yum install -y https://www.elrepo.org/elrepo-release-8.el8.elrepo.noarch.rpm
+		rpm -Uvh https://www.elrepo.org/elrepo-release-8.el8.elrepo.noarch.rpm
 		yum --enablerepo=elrepo-kernel install -y kernel-ml
 	fi
 	
-	echo -e "${Info} 内核安装完成，需要重启生效"
-	read -p "是否立即重启？[Y/n]" choice
+	echo -e "${Info} Kernel installed, reboot required"
+	read -p "Reboot now? [Y/n]" choice
 	case "$choice" in 
 		y|Y|'' ) reboot ;;
-		* ) echo "请手动重启后继续" ;;
+		* ) echo "Please reboot manually" ;;
 	esac
 }
 
-# 启用BBR
+# Enable BBR
 enable_bbr(){
-	echo -e "${Info} 正在启用BBR..."
+	echo -e "${Info} Enabling BBR..."
 	
-	# 移除旧配置
+	# Remove old configurations
 	sed -i '/net.core.default_qdisc/d' /etc/sysctl.conf
 	sed -i '/net.ipv4.tcp_congestion_control/d' /etc/sysctl.conf
 	
-	# 添加新配置（使用最新的cake队列算法）
+	# Add new configurations (using latest cake algorithm)
 	echo "net.core.default_qdisc=cake" >> /etc/sysctl.conf
 	echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
 	
-	# 应用配置
+	# Apply configurations
 	sysctl -p
 	
-	echo -e "${Info} BBR已启用！"
+	echo -e "${Info} BBR enabled!"
 }
 
-# 系统优化配置
+# System optimization
 optimize_system(){
-	echo -e "${Info} 正在优化系统配置..."
+	echo -e "${Info} Optimizing system configuration..."
 	
-	# 备份原始配置
+	# Backup original config
 	cp /etc/sysctl.conf /etc/sysctl.conf.backup
 	
-	# 优化TCP参数
+	# Optimize TCP parameters
 	cat > /tmp/sysctl_optimize.conf << EOF
 # TCP BBR Configuration
 net.core.default_qdisc = cake
@@ -128,76 +128,76 @@ fs.file-max = 2097152
 fs.nr_open = 2097152
 EOF
 	
-	# 应用优化配置
+	# Apply optimization config
 	cat /tmp/sysctl_optimize.conf >> /etc/sysctl.conf
 	sysctl -p
 	
-	# 优化文件描述符限制
+	# Optimize file descriptor limits
 	echo "* soft nofile 1048576" >> /etc/security/limits.conf
 	echo "* hard nofile 1048576" >> /etc/security/limits.conf
 	echo "root soft nofile 1048576" >> /etc/security/limits.conf
 	echo "root hard nofile 1048576" >> /etc/security/limits.conf
 	
-	echo -e "${Info} 系统优化完成！"
+	echo -e "${Info} System optimization completed!"
 }
 
-# 检查BBR状态
+# Check BBR status
 check_bbr_status(){
-	echo -e "${Info} 检查当前BBR状态..."
+	echo -e "${Info} Checking BBR status..."
 	
-	# 检查当前拥塞控制算法
-	current_cc=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
-	current_qdisc=$(sysctl net.core.default_qdisc | awk '{print $3}')
+	# Check current congestion control algorithm
+	current_cc=$(sysctl net.ipv4.tcp_congestion_control 2>/dev/null | awk '{print $3}')
+	current_qdisc=$(sysctl net.core.default_qdisc 2>/dev/null | awk '{print $3}')
 	
-	echo "当前拥塞控制: ${current_cc}"
-	echo "当前队列算法: ${current_qdisc}"
+	echo "Current congestion control: ${current_cc:-Not set}"
+	echo "Current queue algorithm: ${current_qdisc:-Not set}"
 	
 	if [[ "${current_cc}" == "bbr" ]]; then
-		echo -e "${Info} BBR已启用！"
+		echo -e "${Info} BBR is enabled!"
 	else
-		echo -e "${Error} BBR未启用"
+		echo -e "${Error} BBR is not enabled"
 	fi
 }
 
-# 安全清理函数
+# Safe cleanup function
 safe_cleanup(){
 	rm -f /tmp/sysctl_optimize.conf
 	rm -f /tmp/kernel_install.log
 }
 
-# 主菜单
+# Main menu
 main_menu(){
 	clear
-	echo -e "=== TCP网络优化脚本 v${sh_ver} ==="
-	echo "1. 安装最新稳定版内核"
-	echo "2. 启用BBR加速"
-	echo "3. 系统性能优化"
-	echo "4. 检查BBR状态"
-	echo "5. 退出"
+	echo -e "=== TCP Network Optimization Script v${sh_ver} ==="
+	echo "1. Install latest stable kernel"
+	echo "2. Enable BBR acceleration"
+	echo "3. System performance optimization"
+	echo "4. Check BBR status"
+	echo "5. Exit"
 	echo ""
 	
-	read -p "请选择操作 [1-5]: " choice
+	read -p "Please choose [1-5]: " choice
 	case $choice in
 		1) install_latest_kernel ;;
 		2) enable_bbr ;;
 		3) optimize_system ;;
 		4) check_bbr_status ;;
 		5) exit 0 ;;
-		*) echo "无效选择" ;;
+		*) echo "Invalid choice" ;;
 	esac
 	
-	# 返回主菜单
+	# Return to main menu
 	echo ""
-	read -p "按回车键返回主菜单..."
-	# 移除递归调用main_menu，避免栈溢出和闪屏
+	read -p "Press Enter to return to main menu..."
+	# Removed recursive main_menu call to prevent stack overflow and flashing
 }
 
-# 脚本入口
+# Script entry point
 trap safe_cleanup EXIT
 check_sys
-echo -e "${Info} 检测到系统: ${release} ${bit}"
+echo -e "${Info} Detected system: ${release} ${bit}"
 
-# 使用循环代替递归，避免栈溢出
+# Use loop instead of recursion to prevent stack overflow
 while true; do
     main_menu
 done
