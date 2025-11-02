@@ -167,36 +167,35 @@ safe_cleanup(){
 
 # Main menu
 main_menu(){
-	while true; do
-		clear
-		echo -e "=== TCP网络优化脚本 v${sh_ver} ==="
-		echo "1. 安装最新稳定内核"
-		echo "2. 启用BBR加速"
-		echo "3. 系统性能优化"
-		echo "4. 检查BBR状态"
-		echo "5. 安装BBRPlus (增强版BBR)"
-		echo "6. 安装魔改BBR (修改版BBR)"
-		echo "7. 更新BBR配置"
-		echo "8. 退出"
-		echo ""
-		
-		read -p "请选择 [1-8]: " choice
-		case $choice in
-			1) install_latest_kernel ; break ;;
-			2) enable_bbr ; break ;;
-			3) optimize_system ; break ;;
-			4) check_bbr_status ; break ;;
-			5) install_bbrplus ; break ;;
-			6) install_magic_bbr ; break ;;
-			7) update_bbr_config ; break ;;
-			8) exit 0 ;;
-			*) echo -e "${Error} 无效选择，请重新输入" ; sleep 1 ;;
-		esac
-	done
+	clear
+	echo -e "=== TCP网络优化脚本 v${sh_ver} ==="
+	echo "1. 安装最新稳定内核"
+	echo "2. 启用BBR加速"
+	echo "3. 系统性能优化"
+	echo "4. 检查BBR状态"
+	echo "5. 安装BBRPlus (增强版BBR)"
+	echo "6. 安装魔改BBR (修改版BBR)"
+	echo "7. 更新BBR配置"
+	echo "8. 退出"
+	echo ""
+	
+	read -p "请选择 [1-8]: " choice
+	case $choice in
+		1) install_latest_kernel ;;
+		2) enable_bbr ;;
+		3) optimize_system ;;
+		4) check_bbr_status ;;
+		5) install_bbrplus ;;
+		6) install_magic_bbr ;;
+		7) update_bbr_config ;;
+		8) exit 0 ;;
+		*) echo -e "${Error} 无效选择，请重新输入" ; sleep 2 ; return 1 ;;
+	esac
 	
 	# Return to main menu
 	echo ""
 	read -p "按回车键返回主菜单..."
+	return 0
 }
 
 # Install BBRPlus (Enhanced BBR)
