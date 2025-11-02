@@ -1,0 +1,102 @@
+# Linux服务器手动运行命令
+# 将这些命令复制到Linux服务器的终端中执行
+
+# ========================
+# 方法1：直接下载并运行
+# ========================
+
+# 1. 下载脚本
+wget -O /tmp/tcp_optimized.sh https://raw.githubusercontent.com/你的仓库/tcp_optimized.sh
+
+# 2. 赋予执行权限
+chmod +x /tmp/tcp_optimized.sh
+
+# 3. 运行脚本
+cd /tmp
+./tcp_optimized.sh
+
+# ========================
+# 方法2：手动创建脚本
+# ========================
+
+# 1. 创建脚本文件
+cat > /tmp/tcp_optimized.sh << 'EOF'
+#!/usr/bin/env bash
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
+export PATH
+
+# 脚本内容从这里开始...
+# [这里应该粘贴完整的tcp_optimized.sh内容]
+EOF
+
+# 2. 赋予执行权限
+chmod +x /tmp/tcp_optimized.sh
+
+# 3. 运行脚本
+cd /tmp
+./tcp_optimized.sh
+
+# ========================
+# 单命令快速运行
+# ========================
+
+# 一键运行（需要curl）
+curl -sSL https://raw.githubusercontent.com/你的仓库/tcp_optimized.sh | bash
+
+# 或者使用wget
+wget -qO- https://raw.githubusercontent.com/你的仓库/tcp_optimized.sh | bash
+
+# ========================
+# 运行选项说明
+# ========================
+
+# 脚本运行时会显示菜单：
+# 1. 安装最新稳定版内核 - 需要重启
+# 2. 启用BBR加速 - 立即生效
+# 3. 系统性能优化 - 立即生效
+# 4. 检查BBR状态 - 查看当前状态
+# 5. 退出
+
+# ========================
+# 运行前的检查
+# ========================
+
+# 检查当前内核版本
+uname -r
+
+# 检查当前TCP拥塞控制算法
+sysctl net.ipv4.tcp_congestion_control
+
+# 检查系统信息
+cat /etc/os-release
+
+# ========================
+# 运行后的验证
+# ========================
+
+# 验证BBR是否启用
+sysctl net.ipv4.tcp_congestion_control
+
+# 查看队列算法
+sysctl net.core.default_qdisc
+
+# 查看所有优化参数
+sysctl -a | grep -E "(tcp_|net\.|fs\.)" | grep -v "\:" | head -20
+
+# ========================
+# 注意事项
+# ========================
+
+# 1. 需要root权限运行
+# 2. 安装内核后需要重启服务器
+# 3. 建议在服务器空闲时运行
+# 4. 运行前建议备份重要数据
+# 5. 某些操作可能需要几分钟时间
+
+# 如果遇到权限问题，使用sudo：
+sudo bash /tmp/tcp_optimized.sh
+
+# 或者切换到root用户：
+su - root
+cd /tmp
+./tcp_optimized.sh
