@@ -189,11 +189,15 @@ main_menu(){
 	# 返回主菜单
 	echo ""
 	read -p "按回车键返回主菜单..."
-	main_menu
+	# 移除递归调用main_menu，避免栈溢出和闪屏
 }
 
 # 脚本入口
 trap safe_cleanup EXIT
 check_sys
 echo -e "${Info} 检测到系统: ${release} ${bit}"
-main_menu
+
+# 使用循环代替递归，避免栈溢出
+while true; do
+    main_menu
+done

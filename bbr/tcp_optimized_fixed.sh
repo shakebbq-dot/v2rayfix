@@ -189,11 +189,15 @@ main_menu(){
 	# Return to main menu
 	echo ""
 	read -p "Press Enter to return to main menu..."
-	main_menu
+	# Removed recursive main_menu call to prevent stack overflow and flashing
 }
 
 # Script entry point
 trap safe_cleanup EXIT
 check_sys
 echo -e "${Info} Detected system: ${release} ${bit}"
-main_menu
+
+# Use loop instead of recursion to prevent stack overflow
+while true; do
+    main_menu
+done
