@@ -1,0 +1,74 @@
+# 一键脚本命令大全
+# GitHub仓库: https://github.com/shakebbq-dot/v2rayfix/raw/main/bbr
+
+# ========================
+# 推荐：单命令快速运行
+# ========================
+
+# 方法1：使用curl（推荐）
+curl -sSL https://github.com/shakebbq-dot/v2rayfix/raw/main/bbr/tcp_optimized.sh | bash
+
+# 方法2：使用wget
+wget -qO- https://github.com/shakebbq-dot/v2rayfix/raw/main/bbr/tcp_optimized.sh | bash
+
+# ========================
+# 分步运行命令
+# ========================
+
+# 1. 下载脚本
+wget -O /tmp/tcp_optimized.sh https://github.com/shakebbq-dot/v2rayfix/raw/main/bbr/tcp_optimized.sh
+
+# 2. 赋予执行权限
+chmod +x /tmp/tcp_optimized.sh
+
+# 3. 运行脚本
+cd /tmp && ./tcp_optimized.sh
+
+# ========================
+# Windows PowerShell命令
+# ========================
+
+# 在Windows上运行（需要OpenSSH）
+# 1. 首先确保已安装OpenSSH客户端
+# 2. 运行以下命令：
+
+# 方法1：直接上传并运行
+$serverIP = "你的服务器IP"
+$username = "root"
+scp tcp_optimized.sh ${username}@${serverIP}:/tmp/
+ssh ${username}@${serverIP} "chmod +x /tmp/tcp_optimized.sh && cd /tmp && ./tcp_optimized.sh"
+
+# 方法2：流式传输运行
+cat tcp_optimized.sh | ssh ${username}@${serverIP} 'bash -s'
+
+# ========================
+# 常用验证命令
+# ========================
+
+# 检查BBR状态
+sysctl net.ipv4.tcp_congestion_control
+
+# 检查队列算法
+sysctl net.core.default_qdisc
+
+# 检查内核版本
+uname -r
+
+# ========================
+# 注意事项
+# ========================
+
+# 1. 需要root权限运行
+# 2. 安装内核后需要重启服务器
+# 3. 建议在服务器空闲时运行
+# 4. 运行前建议备份重要数据
+
+# 如果脚本不在main分支，请替换URL中的"main"为正确的分支名
+# 例如：https://github.com/shakebbq-dot/v2rayfix/raw/master/bbr/tcp_optimized.sh
+
+# ========================
+# 快速复制区
+# ========================
+
+# 复制这个命令到Linux服务器运行：
+curl -sSL https://github.com/shakebbq-dot/v2rayfix/raw/main/bbr/tcp_optimized.sh | bash

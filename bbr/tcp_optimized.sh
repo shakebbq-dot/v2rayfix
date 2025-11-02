@@ -7,6 +7,7 @@ export PATH
 # Description: Modern TCP BBR Optimization Script
 # Version: 2.0.0
 # Author: Network Optimization Tool
+# GitHub: https://github.com/shakebbq-dot/v2rayfix/raw/main/bbr
 # Features: Latest Kernel BBR, System Tuning, Security
 #=================================================
 

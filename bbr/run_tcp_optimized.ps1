@@ -1,6 +1,6 @@
 # PowerShell脚本 - 在Linux服务器上运行TCP优化脚本
 # 使用方法：在Windows上准备，然后复制到Linux服务器执行
-# GitHub: https://github.com/shakebbq-dot/v2rayfix
+# GitHub: https://github.com/shakebbq-dot/v2rayfix/raw/main/bbr
 
 Write-Host "=== TCP网络优化脚本运行指南 ===" -ForegroundColor Green
 Write-Host ""
