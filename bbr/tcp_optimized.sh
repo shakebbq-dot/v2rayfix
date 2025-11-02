@@ -297,7 +297,7 @@ while true; do
 	echo "8. 退出"
 	echo ""
 	
-	read -p "Please choose [1-8]: " choice
+	read -p "请选择 [1-8]: " choice
 	case $choice in
 		1) install_latest_kernel ;;
 		2) enable_bbr ;;
