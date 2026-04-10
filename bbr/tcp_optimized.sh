@@ -287,14 +287,14 @@ echo -e "${Info} Detected system: ${release} ${bit}"
 while true; do
 	clear
 	echo -e "=== TCP网络优化脚本 v${sh_ver} ==="
-	echo "1. 安装最新稳定内核"
-	echo "2. 启用BBR加速"
+	echo "1. 安装最新稳定内�?
+	echo "2. 启用BBR加�?
 	echo "3. 系统性能优化"
-	echo "4. 检查BBR状态"
+	echo "4. 检查BBR状�?
 	echo "5. 安装BBRPlus (增强版BBR)"
 	echo "6. 安装魔改BBR (修改版BBR)"
 	echo "7. 更新BBR配置"
-	echo "8. 退出"
+	echo "8. 退�?
 	echo ""
 	
 	read -p "请选择 [1-8]: " choice
@@ -312,5 +312,5 @@ while true; do
 	
 	# Return to main menu
 	echo ""
-	read -p "按回车键返回主菜单..."
+	read -p "按回车键返回主菜�?.."
 done

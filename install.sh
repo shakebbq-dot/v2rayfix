@@ -7,7 +7,7 @@
 #	Version: 1.0 (FIXED VERSION)
 #	email:admin@wulabing.com
 #	Official document: www.v2ray.com
-#	修复版本: 修复了多个关键bug和安全问题
+#	修复版本: 修复了多个关键bug和安全问�?
 #====================================================
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
@@ -59,7 +59,7 @@ openssl_version="1.1.1k"
 jemalloc_version="5.2.1"
 old_config_status="off"
 
-#移动旧版本配置信息 对小于 1.1.0 版本适配
+#移动旧版本配置信�?对小�?1.1.0 版本适配
 [[ -f "/etc/v2ray/vmess_qr.json" ]] && mv /etc/v2ray/vmess_qr.json $v2ray_qr_config_file
 
 #简易随机数
@@ -67,13 +67,13 @@ random_num=$((RANDOM%12+4))
 #生成伪装路径
 camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
 
-# ========== 修复16: 智能计算编译线程数（避免内存不足） ==========
-# 检测CPU核心数
+# ========== 修复16: 智能计算编译线程数（避免内存不足�?==========
+# 检测CPU核心�?
 CPU_CORES=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)
-# 检测可用内存（MB）
+# 检测可用内存（MB�?
 AVAILABLE_MEM=$(free -m | awk '/^Mem:/{print $7}')
-# 智能调整编译线程数：每线程至少需要1GB内存，最多使用可用内存的80%
-# jemalloc编译比较占用内存，建议每个线程至少1.5GB
+# 智能调整编译线程数：每线程至少需�?GB内存，最多使用可用内存的80%
+# jemalloc编译比较占用内存，建议每个线程至�?.5GB
 MEM_BASED_THREAD=$((AVAILABLE_MEM / 1536))  # 1.5GB per thread
 # 取CPU核心数和内存限制的较小值，但至少为1
 if [ $MEM_BASED_THREAD -lt 1 ]; then
@@ -89,19 +89,19 @@ if [ $AVAILABLE_MEM -lt 2048 ]; then
     THREAD=1
     echo -e "${Error} ${RedBG} 检测到可用内存不足2GB，将使用单线程编译以避免内存不足 ${Font}"
 else
-    echo -e "${OK} ${GreenBG} 检测到CPU核心数: ${CPU_CORES}, 可用内存: ${AVAILABLE_MEM}MB, 将使用 ${THREAD} 线程编译 ${Font}"
+    echo -e "${OK} ${GreenBG} 检测到CPU核心�? ${CPU_CORES}, 可用内存: ${AVAILABLE_MEM}MB, 将使�?${THREAD} 线程编译 ${Font}"
 fi
 
 source '/etc/os-release'
 
-#从VERSION中提取发行版系统的英文名称，为了在debian/ubuntu下添加相对应的Nginx apt源
+#从VERSION中提取发行版系统的英文名称，为了在debian/ubuntu下添加相对应的Nginx apt�?
 VERSION=$(echo "${VERSION}" | awk -F "[()]" '{print $2}')
 
 # ========== 修复1: 添加输入验证函数 ==========
 validate_domain() {
     local domain_pattern='^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$'
     if [[ ! $1 =~ $domain_pattern ]]; then
-        echo -e "${Error} ${RedBG} 域名格式不正确: $1 ${Font}"
+        echo -e "${Error} ${RedBG} 域名格式不正�? $1 ${Font}"
         return 1
     fi
     return 0
@@ -110,7 +110,7 @@ validate_domain() {
 validate_port() {
     local port=$1
     if [[ ! $port =~ ^[0-9]+$ ]] || [[ $port -lt 1 ]] || [[ $port -gt 65535 ]]; then
-        echo -e "${Error} ${RedBG} 端口号无效: $port (必须是1-65535之间的数字) ${Font}"
+        echo -e "${Error} ${RedBG} 端口号无�? $port (必须�?-65535之间的数�? ${Font}"
         return 1
     fi
     return 0
@@ -119,7 +119,7 @@ validate_port() {
 validate_uuid() {
     local uuid_pattern='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
     if [[ ! $1 =~ $uuid_pattern ]]; then
-        echo -e "${Error} ${RedBG} UUID格式不正确: $1 ${Font}"
+        echo -e "${Error} ${RedBG} UUID格式不正�? $1 ${Font}"
         return 1
     fi
     return 0
@@ -143,7 +143,7 @@ download_with_retry() {
     return 1
 }
 
-# ========== 修复3: 改进的base64编码函数（跨平台兼容） ==========
+# ========== 修复3: 改进的base64编码函数（跨平台兼容�?==========
 base64_encode() {
     local file=$1
     if command -v base64 >/dev/null 2>&1; then
@@ -151,26 +151,26 @@ base64_encode() {
         if base64 -w 0 </dev/null >/dev/null 2>&1; then
             base64 -w 0 "$file"
         else
-            # macOS和其他不支持-w的系统
+            # macOS和其他不支持-w的系�?
             base64 "$file" | tr -d '\n'
         fi
     else
-        echo -e "${Error} ${RedBG} base64 命令未找到 ${Font}"
+        echo -e "${Error} ${RedBG} base64 命令未找�?${Font}"
         return 1
     fi
 }
 
 check_system() {
     if [[ "${ID}" == "centos" && ${VERSION_ID} -ge 7 ]]; then
-        echo -e "${OK} ${GreenBG} 当前系统为 Centos ${VERSION_ID} ${VERSION} ${Font}"
+        echo -e "${OK} ${GreenBG} 当前系统�?Centos ${VERSION_ID} ${VERSION} ${Font}"
         INS="yum"
     elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 8 ]]; then
-        echo -e "${OK} ${GreenBG} 当前系统为 Debian ${VERSION_ID} ${VERSION} ${Font}"
+        echo -e "${OK} ${GreenBG} 当前系统�?Debian ${VERSION_ID} ${VERSION} ${Font}"
         INS="apt"
         $INS update
-        ## 添加 Nginx apt源
+        ## 添加 Nginx apt�?
     elif [[ "${ID}" == "ubuntu" && $(echo "${VERSION_ID}" | cut -d '.' -f1) -ge 16 ]]; then
-        echo -e "${OK} ${GreenBG} 当前系统为 Ubuntu ${VERSION_ID} ${UBUNTU_CODENAME} ${Font}"
+        echo -e "${OK} ${GreenBG} 当前系统�?Ubuntu ${VERSION_ID} ${UBUNTU_CODENAME} ${Font}"
         INS="apt"
         rm /var/lib/dpkg/lock
         dpkg --configure -a
@@ -178,41 +178,41 @@ check_system() {
         rm /var/cache/apt/archives/lock
         $INS update
     else
-        echo -e "${Error} ${RedBG} 当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内，安装中断 ${Font}"
+        echo -e "${Error} ${RedBG} 当前系统�?${ID} ${VERSION_ID} 不在支持的系统列表内，安装中�?${Font}"
         exit 1
     fi
 
     $INS install dbus
 
     # ========== 修复4: 改进防火墙处理（只开放必要端口，不完全关闭） ==========
-    echo -e "${OK} ${GreenBG} 配置防火墙规则 ${Font}"
+    echo -e "${OK} ${GreenBG} 配置防火墙规�?${Font}"
     
     # 检查firewalld
     if systemctl is-active --quiet firewalld 2>/dev/null; then
-        # 只开放80和443端口，不关闭防火墙
+        # 只开�?0�?43端口，不关闭防火�?
         if command -v firewall-cmd >/dev/null 2>&1; then
             firewall-cmd --permanent --add-port=80/tcp
             firewall-cmd --permanent --add-port=443/tcp
             firewall-cmd --reload
-            echo -e "${OK} ${GreenBG} firewalld 已配置开放80和443端口 ${Font}"
+            echo -e "${OK} ${GreenBG} firewalld 已配置开�?0�?43端口 ${Font}"
         fi
     fi
     
     # 检查ufw
     if systemctl is-active --quiet ufw 2>/dev/null; then
-        # 只开放80和443端口
+        # 只开�?0�?43端口
         ufw allow 80/tcp
         ufw allow 443/tcp
-        echo -e "${OK} ${GreenBG} ufw 已配置开放80和443端口 ${Font}"
+        echo -e "${OK} ${GreenBG} ufw 已配置开�?0�?43端口 ${Font}"
     fi
 }
 
 is_root() {
     if [ 0 == $UID ]; then
-        echo -e "${OK} ${GreenBG} 当前用户是root用户，进入安装流程 ${Font}"
+        echo -e "${OK} ${GreenBG} 当前用户是root用户，进入安装流�?${Font}"
         sleep 3
     else
-        echo -e "${Error} ${RedBG} 当前用户不是root用户，请切换到root用户后重新执行脚本 ${Font}"
+        echo -e "${Error} ${RedBG} 当前用户不是root用户，请切换到root用户后重新执行脚�?${Font}"
         exit 1
     fi
 }
@@ -249,7 +249,7 @@ chrony_install() {
     chronyc sourcestats -v
     chronyc tracking -v
     date
-    read -rp "请确认时间是否准确,误差范围±3分钟(Y/N): " chrony_install
+    read -rp "请确认时间是否准�?误差范围±3分钟(Y/N): " chrony_install
     [[ -z ${chrony_install} ]] && chrony_install="Y"
     case $chrony_install in
     [yY][eE][sS] | [yY])
@@ -281,7 +281,7 @@ dependency_install() {
         systemctl start cron && systemctl enable cron
 
     fi
-    judge "crontab 自启动配置 "
+    judge "crontab 自启动配�?"
 
     ${INS} -y install bc
     judge "安装 bc"
@@ -300,7 +300,7 @@ dependency_install() {
     else
         ${INS} -y install build-essential
     fi
-    judge "编译工具包 安装"
+    judge "编译工具�?安装"
 
     if [[ "${ID}" == "centos" ]]; then
         ${INS} -y install pcre pcre-devel zlib-devel epel-release
@@ -332,7 +332,7 @@ dependency_install() {
 }
 
 basic_optimization() {
-    # 最大文件打开数
+    # 最大文件打开�?
     sed -i '/^\*\ *soft\ *nofile\ *[[:digit:]]*/d' /etc/security/limits.conf
     sed -i '/^\*\ *hard\ *nofile\ *[[:digit:]]*/d' /etc/security/limits.conf
     echo '* soft nofile 65536' >>/etc/security/limits.conf
@@ -346,10 +346,10 @@ basic_optimization() {
         [yY][eE][sS] | [yY])
             sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
             setenforce 0
-            echo -e "${OK} ${GreenBG} SELinux 已禁用 ${Font}"
+            echo -e "${OK} ${GreenBG} SELinux 已禁�?${Font}"
             ;;
         *)
-            # 设置为permissive模式（允许但记录违规）
+            # 设置为permissive模式（允许但记录违规�?
             sed -i 's/^SELINUX=.*/SELINUX=permissive/' /etc/selinux/config
             setenforce 0
             echo -e "${OK} ${GreenBG} SELinux 已设置为permissive模式 ${Font}"
@@ -362,7 +362,7 @@ basic_optimization() {
 port_alterid_set() {
     if [[ "on" != "$old_config_status" ]]; then
         while true; do
-            read -rp "请输入连接端口（default:443）:" port
+            read -rp "请输入连接端口（default:443�?" port
             [[ -z ${port} ]] && port="443"
             if validate_port "$port"; then
                 break
@@ -400,7 +400,7 @@ modify_UUID() {
     fi
     # ========== 修复6: 添加UUID验证 ==========
     if ! validate_uuid "$UUID"; then
-        echo -e "${Error} ${RedBG} UUID验证失败，重新生成 ${Font}"
+        echo -e "${Error} ${RedBG} UUID验证失败，重新生�?${Font}"
         UUID=$(cat /proc/sys/kernel/random/uuid)
     fi
     sed -i "/\"id\"/c \\\t  \"id\":\"${UUID}\"," ${v2ray_conf}
@@ -417,7 +417,7 @@ modify_nginx_port() {
     sed -i "3c \\\tlisten [::]:${port} http2;" ${nginx_conf}
     judge "V2ray port 修改"
     [ -f ${v2ray_qr_config_file} ] && sed -i "/\"port\"/c \\  \"port\": \"${port}\"," ${v2ray_qr_config_file}
-    echo -e "${OK} ${GreenBG} 端口号:${port} ${Font}"
+    echo -e "${OK} ${GreenBG} 端口�?${port} ${Font}"
 }
 
 modify_nginx_other() {
@@ -429,7 +429,7 @@ modify_nginx_other() {
 }
 
 web_camouflage() {
-    ##请注意 这里和LNMP脚本的默认路径冲突，千万不要在安装了LNMP的环境下使用本脚本，否则后果自负
+    ##请注�?这里和LNMP脚本的默认路径冲突，千万不要在安装了LNMP的环境下使用本脚本，否则后果自负
     rm -rf /home/wwwroot
     mkdir -p /home/wwwroot
     cd /home/wwwroot || exit
@@ -447,7 +447,7 @@ v2ray_install() {
     mkdir -p /root/v2ray
     cd /root/v2ray || exit
     
-    # ========== 修复7: 使用改进的下载函数 ==========
+    # ========== 修复7: 使用改进的下载函�?==========
     if ! download_with_retry "https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/${github_branch}/v2ray.sh" "v2ray.sh"; then
         echo -e "${Error} ${RedBG} V2ray 安装文件下载失败，请检查下载地址是否可用 ${Font}"
         exit 4
@@ -471,7 +471,7 @@ nginx_exist_check() {
         echo -e "${OK} ${GreenBG} Nginx已存在，跳过编译安装过程 ${Font}"
         sleep 2
     elif [[ -d "/usr/local/nginx/" ]]; then
-        echo -e "${OK} ${GreenBG} 检测到其他套件安装的Nginx，继续安装会造成冲突，请处理后安装${Font}"
+        echo -e "${OK} ${GreenBG} 检测到其他套件安装的Nginx，继续安装会造成冲突，请处理后安�?{Font}"
         exit 1
     else
         nginx_install
@@ -503,8 +503,8 @@ nginx_install() {
 
     [[ -d "$nginx_dir" ]] && rm -rf ${nginx_dir}
 
-    echo -e "${OK} ${GreenBG} 即将开始编译安装 jemalloc ${Font}"
-    echo -e "${OK} ${GreenBG} 使用 ${THREAD} 个编译线程（基于可用内存智能调整） ${Font}"
+    echo -e "${OK} ${GreenBG} 即将开始编译安�?jemalloc ${Font}"
+    echo -e "${OK} ${GreenBG} 使用 ${THREAD} 个编译线程（基于可用内存智能调整�?${Font}"
     sleep 2
 
     cd jemalloc-${jemalloc_version} || exit
@@ -512,14 +512,14 @@ nginx_install() {
     judge "编译检查"
     
     # ========== 修复17: 改进jemalloc编译，添加内存检查和降级方案 ==========
-    # 检查可用内存是否足够
+    # 检查可用内存是否足�?
     CURRENT_MEM=$(free -m | awk '/^Mem:/{print $7}')
-    MIN_REQUIRED_MEM=$((THREAD * 1536))  # 每个线程至少需要1.5GB
+    MIN_REQUIRED_MEM=$((THREAD * 1536))  # 每个线程至少需�?.5GB
     
     if [ $CURRENT_MEM -lt $MIN_REQUIRED_MEM ]; then
-        echo -e "${Error} ${RedBG} 警告：可用内存 ${CURRENT_MEM}MB 可能不足以支持 ${THREAD} 线程编译 ${Font}"
-        echo -e "${OK} ${GreenBG} 尝试减少编译线程数或使用单线程编译... ${Font}"
-        # 重新计算线程数
+        echo -e "${Error} ${RedBG} 警告：可用内�?${CURRENT_MEM}MB 可能不足以支�?${THREAD} 线程编译 ${Font}"
+        echo -e "${OK} ${GreenBG} 尝试减少编译线程数或使用单线程编�?.. ${Font}"
+        # 重新计算线程�?
         SAFE_THREAD=$((CURRENT_MEM / 1536))
         if [ $SAFE_THREAD -lt 1 ]; then
             SAFE_THREAD=1
@@ -530,11 +530,11 @@ nginx_install() {
     
     # 尝试编译，如果失败则降级为单线程
     if ! make -j "${THREAD}" 2>&1; then
-        echo -e "${Error} ${RedBG} 多线程编译失败，尝试单线程编译... ${Font}"
+        echo -e "${Error} ${RedBG} 多线程编译失败，尝试单线程编�?.. ${Font}"
         make clean 2>/dev/null || true
         if ! make -j 1; then
             echo -e "${Error} ${RedBG} jemalloc 编译失败，可能由于内存不足或系统资源限制 ${Font}"
-            echo -e "${OK} ${GreenBG} 可以选择跳过jemalloc安装，继续安装Nginx（性能可能略有影响）${Font}"
+            echo -e "${OK} ${GreenBG} 可以选择跳过jemalloc安装，继续安装Nginx（性能可能略有影响�?{Font}"
             read -rp "是否跳过jemalloc安装并继续？(Y/N，默认N): " skip_jemalloc
             if [[ "${skip_jemalloc}" =~ ^[Yy]$ ]]; then
                 echo -e "${OK} ${GreenBG} 跳过jemalloc安装，继续安装Nginx ${Font}"
@@ -556,7 +556,7 @@ nginx_install() {
     echo '/usr/local/lib' >/etc/ld.so.conf.d/local.conf
     ldconfig
 
-    echo -e "${OK} ${GreenBG} 即将开始编译安装 Nginx, 过程稍久，请耐心等待 ${Font}"
+    echo -e "${OK} ${GreenBG} 即将开始编译安�?Nginx, 过程稍久，请耐心等待 ${Font}"
     sleep 4
 
     cd ../nginx-${nginx_version} || exit
@@ -568,7 +568,7 @@ nginx_install() {
         echo -e "${OK} ${GreenBG} 检测到jemalloc已安装，Nginx将使用jemalloc进行内存管理 ${Font}"
     else
         LD_OPT=""
-        echo -e "${OK} ${GreenBG} jemalloc未安装，Nginx将使用系统默认内存管理 ${Font}"
+        echo -e "${OK} ${GreenBG} jemalloc未安装，Nginx将使用系统默认内存管�?${Font}"
     fi
 
     ./configure --prefix="${nginx_dir}" \
@@ -606,30 +606,30 @@ nginx_install() {
 }
 
 ssl_install() {
-    # ========== 修复15: 修复netcat包名兼容性问题 ==========
+    # ========== 修复15: 修复netcat包名兼容性问�?==========
     # netcat是虚拟包，需要明确选择netcat-openbsd或netcat-traditional
-    # 推荐使用netcat-openbsd（更现代、功能更全面）
+    # 推荐使用netcat-openbsd（更现代、功能更全面�?
     if [[ "${ID}" == "centos" ]]; then
         ${INS} install socat nc -y
     elif [[ "${ID}" == "debian" ]] || [[ "${ID}" == "ubuntu" ]]; then
         # Debian/Ubuntu系统：明确选择netcat-openbsd（推荐）
-        echo -e "${OK} ${GreenBG} 正在安装 socat 和 netcat-openbsd... ${Font}"
+        echo -e "${OK} ${GreenBG} 正在安装 socat �?netcat-openbsd... ${Font}"
         if ${INS} install -y socat netcat-openbsd; then
-            echo -e "${OK} ${GreenBG} 已成功安装 socat 和 netcat-openbsd ${Font}"
+            echo -e "${OK} ${GreenBG} 已成功安�?socat �?netcat-openbsd ${Font}"
         else
             # 如果netcat-openbsd安装失败，尝试netcat-traditional
             echo -e "${OK} ${GreenBG} netcat-openbsd安装失败，尝试netcat-traditional... ${Font}"
             if ${INS} install -y socat netcat-traditional; then
-                echo -e "${OK} ${GreenBG} 已成功安装 socat 和 netcat-traditional ${Font}"
+                echo -e "${OK} ${GreenBG} 已成功安�?socat �?netcat-traditional ${Font}"
             else
-                # 最后的备选方案：只安装socat（SSL证书生成主要依赖socat）
+                # 最后的备选方案：只安装socat（SSL证书生成主要依赖socat�?
                 echo -e "${Error} ${RedBG} netcat安装失败，只安装socat... ${Font}"
                 ${INS} install -y socat
-                # 检查nc命令是否已存在
+                # 检查nc命令是否已存�?
                 if command -v nc >/dev/null 2>&1; then
-                    echo -e "${OK} ${GreenBG} socat已安装，nc命令已存在 ${Font}"
+                    echo -e "${OK} ${GreenBG} socat已安装，nc命令已存�?${Font}"
                 else
-                    echo -e "${Error} ${RedBG} 警告：netcat未安装，但socat已安装。某些功能可能受限。${Font}"
+                    echo -e "${Error} ${RedBG} 警告：netcat未安装，但socat已安装。某些功能可能受限�?{Font}"
                 fi
             fi
         fi
@@ -645,7 +645,7 @@ ssl_install() {
 
 domain_check() {
     while true; do
-        read -rp "请输入你的域名信息(eg:www.wulabing.com):" domain
+        read -rp "请输入你的域名信�?eg:www.wulabing.com):" domain
         if validate_domain "$domain"; then
             break
         fi
@@ -665,30 +665,30 @@ domain_check() {
     if [[ ${wgcfv4_status} =~ "on"|"plus" ]] || [[ ${wgcfv6_status} =~ "on"|"plus" ]]; then
         # 关闭wgcf-warp，以防误判VPS IP情况
         wg-quick down wgcf >/dev/null 2>&1
-        echo -e "${OK} ${GreenBG} 已关闭 wgcf-warp ${Font}"
+        echo -e "${OK} ${GreenBG} 已关�?wgcf-warp ${Font}"
     fi
     local_ipv4=$(curl -s4m8 http://ip.sb 2>/dev/null || curl -s4m8 http://ip-api.com/line?fields=query 2>/dev/null || echo '')
     local_ipv6=$(curl -s6m8 http://ip.sb 2>/dev/null || curl -s6m8 http://ip-api.com/line?fields=query 2>/dev/null || echo '')
     if [[ -z ${local_ipv4} && -n ${local_ipv6} ]]; then
         echo -e nameserver 2a01:4f8:c2c:123f::1 > /etc/resolv.conf
-        echo -e "${OK} ${GreenBG} 识别为 IPv6 Only 的 VPS，自动添加 DNS64 服务器 ${Font}"
+        echo -e "${OK} ${GreenBG} 识别�?IPv6 Only �?VPS，自动添�?DNS64 服务�?${Font}"
     fi
     
     # ========== 修复9: 修复域名解析IP显示变量错误 ==========
-    echo -e "域名 DNS 解析到的 IPv4：${domain_ipv4}"
-    echo -e "域名 DNS 解析到的 IPv6：${domain_ipv6}"
+    echo -e "域名 DNS 解析到的 IPv4�?{domain_ipv4}"
+    echo -e "域名 DNS 解析到的 IPv6�?{domain_ipv6}"
     echo -e "本机IPv4: ${local_ipv4}"
     echo -e "本机IPv6: ${local_ipv6}"
     sleep 2
     if [[ ${domain_ipv4} == ${local_ipv4} ]]; then
-        echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP 与 本机 IPv4 匹配 ${Font}"
+        echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP �?本机 IPv4 匹配 ${Font}"
         sleep 2
     elif [[ ${domain_ipv6} == ${local_ipv6} ]]; then
-        echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP 与 本机 IPv6 匹配 ${Font}"
+        echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP �?本机 IPv6 匹配 ${Font}"
         sleep 2
     else
-        echo -e "${Error} ${RedBG} 请确保域名添加了正确的 A / AAAA 记录，否则将无法正常使用 V2ray ${Font}"
-        echo -e "${Error} ${RedBG} 域名 DNS 解析 IP 与 本机 IPv4 / IPv6 不匹配 是否继续安装？（y/n）${Font}" && read -r install
+        echo -e "${Error} ${RedBG} 请确保域名添加了正确�?A / AAAA 记录，否则将无法正常使用 V2ray ${Font}"
+        echo -e "${Error} ${RedBG} 域名 DNS 解析 IP �?本机 IPv4 / IPv6 不匹�?是否继续安装？（y/n�?{Font}" && read -r install
         case $install in
         [yY][eE][sS] | [yY])
             echo -e "${GreenBG} 继续安装 ${Font}"
@@ -707,11 +707,11 @@ port_exist_check() {
         echo -e "${OK} ${GreenBG} $1 端口未被占用 ${Font}"
         sleep 1
     else
-        echo -e "${Error} ${RedBG} 检测到 $1 端口被占用，以下为 $1 端口占用信息 ${Font}"
+        echo -e "${Error} ${RedBG} 检测到 $1 端口被占用，以下�?$1 端口占用信息 ${Font}"
         lsof -i:"$1"
         echo -e "${OK} ${GreenBG} 5s 后将尝试自动 kill 占用进程 ${Font}"
         sleep 5
-        # ========== 修复10: 改进端口占用处理（使用SIGTERM而不是SIGKILL） ==========
+        # ========== 修复10: 改进端口占用处理（使用SIGTERM而不是SIGKILL�?==========
         lsof -i:"$1" | awk '{print $2}' | grep -v "PID" | xargs kill -15 2>/dev/null || true
         sleep 2
         # 如果进程仍然存在，再使用kill -9
@@ -734,7 +734,7 @@ acme() {
             sleep 2
             if [[ -n $(type -P wgcf) && -n $(type -P wg-quick) ]]; then
                 wg-quick up wgcf >/dev/null 2>&1
-                echo -e "${OK} ${GreenBG} 已启动 wgcf-warp ${Font}"
+                echo -e "${OK} ${GreenBG} 已启�?wgcf-warp ${Font}"
             fi
         fi
     else
@@ -742,7 +742,7 @@ acme() {
         rm -rf "$HOME/.acme.sh/${domain}_ecc"
         if [[ -n $(type -P wgcf) && -n $(type -P wg-quick) ]]; then
             wg-quick up wgcf >/dev/null 2>&1
-            echo -e "${OK} ${GreenBG} 已启动 wgcf-warp ${Font}"
+            echo -e "${OK} ${GreenBG} 已启�?wgcf-warp ${Font}"
         fi
         exit 1
     fi
@@ -766,7 +766,7 @@ v2ray_conf_add_h2() {
 
 old_config_exist_check() {
     if [[ -f $v2ray_qr_config_file ]]; then
-        echo -e "${OK} ${GreenBG} 检测到旧配置文件，是否读取旧文件配置 [Y/N]? ${Font}"
+        echo -e "${OK} ${GreenBG} 检测到旧配置文件，是否读取旧文件配�?[Y/N]? ${Font}"
         read -r ssl_delete
         case $ssl_delete in
         [yY][eE][sS] | [yY])
@@ -866,7 +866,7 @@ nginx_process_disabled() {
     [ -f $nginx_systemd_file ] && systemctl stop nginx && systemctl disable nginx
 }
 
-#debian 系 9 10 适配
+#debian �?9 10 适配
 #rc_local_initialization(){
 #    if [[ -f /etc/rc.local ]];then
 #        chmod +x /etc/rc.local
@@ -880,7 +880,7 @@ nginx_process_disabled() {
 #}
 
 acme_cron_update() {
-    # ========== 修复12: 修复证书更新脚本下载路径（使用master分支） ==========
+    # ========== 修复12: 修复证书更新脚本下载路径（使用master分支�?==========
     if ! download_with_retry "https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/${github_branch}/ssl_update.sh" "${ssl_update_file}"; then
         echo -e "${Error} ${RedBG} SSL更新脚本下载失败 ${Font}"
         return 1
@@ -941,7 +941,7 @@ vmess_qr_link_image() {
     # ========== 修复13: 使用改进的base64编码函数 ==========
     vmess_link="vmess://$(base64_encode $v2ray_qr_config_file)"
     {
-        echo -e "$Red 二维码: $Font"
+        echo -e "$Red 二维�? $Font"
         echo -n "${vmess_link}" | qrencode -o - -t utf8
         echo -e "${Red} URL导入链接:${vmess_link} ${Font}"
     } >>"${v2ray_info_file}"
@@ -954,7 +954,7 @@ vmess_quan_link_image() {
     # ========== 修复14: 使用改进的base64编码函数 ==========
     vmess_link="vmess://$(base64_encode /tmp/vmess_quan.tmp)"
     {
-        echo -e "$Red 二维码: $Font"
+        echo -e "$Red 二维�? $Font"
         echo -n "${vmess_link}" | qrencode -o - -t utf8
         echo -e "${Red} URL导入链接:${vmess_link} ${Font}"
     } >>"${v2ray_info_file}"
@@ -983,15 +983,15 @@ basic_information() {
     {
         echo -e "${OK} ${GreenBG} V2ray+ws+tls 安装成功"
         echo -e "${Red} V2ray 配置信息 ${Font}"
-        echo -e "${Red} 地址（address）:${Font} $(info_extraction '\"add\"') "
+        echo -e "${Red} 地址（address�?${Font} $(info_extraction '\"add\"') "
         echo -e "${Red} 端口（port）：${Font} $(info_extraction '\"port\"') "
         echo -e "${Red} 用户id（UUID）：${Font} $(info_extraction '\"id\"')"
         echo -e "${Red} 额外id（alterId）：${Font} $(info_extraction '\"aid\"')"
         echo -e "${Red} 加密方式（security）：${Font} 自适应 "
         echo -e "${Red} 传输协议（network）：${Font} $(info_extraction '\"net\"') "
         echo -e "${Red} 伪装类型（type）：${Font} none "
-        echo -e "${Red} 路径（不要落下/）：${Font} $(info_extraction '\"path\"') "
-        echo -e "${Red} 底层传输安全：${Font} tls "
+        echo -e "${Red} 路径（不要落�?）：${Font} $(info_extraction '\"path\"') "
+        echo -e "${Red} 底层传输安全�?{Font} tls "
     } >"${v2ray_info_file}"
 }
 
@@ -1007,7 +1007,7 @@ ssl_judge_and_install() {
         case $ssl_delete in
         [yY][eE][sS] | [yY])
             rm -rf /data/v2ray.crt /data/v2ray.key
-            echo -e "${OK} ${GreenBG} 已删除 ${Font}"
+            echo -e "${OK} ${GreenBG} 已删�?${Font}"
             ;;
         *) ;;
 
@@ -1051,8 +1051,8 @@ EOF
 
 tls_type() {
     if [[ -f "/etc/nginx/sbin/nginx" ]] && [[ -f "$nginx_conf" ]] && [[ "$shell_mode" == "ws" ]]; then
-        echo "请选择支持的 TLS 版本（default:3）:"
-        echo "请注意,如果你使用 Quantaumlt X / 路由器 / 旧版 Shadowrocket / 低于 4.18.1 版本的 V2ray core 请选择 兼容模式"
+        echo "请选择支持�?TLS 版本（default:3�?"
+        echo "请注�?如果你使�?Quantaumlt X / 路由�?/ 旧版 Shadowrocket / 低于 4.18.1 版本�?V2ray core 请选择 兼容模式"
         echo "1: TLS1.1 TLS1.2 and TLS1.3（兼容模式）"
         echo "2: TLS1.2 and TLS1.3 (兼容模式)"
         echo "3: TLS1.3 only"
@@ -1071,16 +1071,16 @@ tls_type() {
         systemctl restart nginx
         judge "Nginx 重启"
     else
-        echo -e "${Error} ${RedBG} Nginx 或 配置文件不存在 或当前安装版本为 h2 ，请正确安装脚本后执行${Font}"
+        echo -e "${Error} ${RedBG} Nginx �?配置文件不存�?或当前安装版本为 h2 ，请正确安装脚本后执�?{Font}"
     fi
 }
 
 show_access_log() {
-    [ -f ${v2ray_access_log} ] && tail -f ${v2ray_access_log} || echo -e "${RedBG}log文件不存在${Font}"
+    [ -f ${v2ray_access_log} ] && tail -f ${v2ray_access_log} || echo -e "${RedBG}log文件不存�?{Font}"
 }
 
 show_error_log() {
-    [ -f ${v2ray_error_log} ] && tail -f ${v2ray_error_log} || echo -e "${RedBG}log文件不存在${Font}"
+    [ -f ${v2ray_error_log} ] && tail -f ${v2ray_error_log} || echo -e "${RedBG}log文件不存�?{Font}"
 }
 
 ssl_update_manuel() {
@@ -1095,7 +1095,7 @@ bbr_boost_sh() {
 }
 
 mtproxy_sh() {
-    echo -e "${Error} ${RedBG} 功能维护，暂不可用 ${Font}"
+    echo -e "${Error} ${RedBG} 功能维护，暂不可�?${Font}"
 }
 
 uninstall_all() {
@@ -1111,7 +1111,7 @@ uninstall_all() {
         [yY][eE][sS] | [yY])
             rm -rf $nginx_dir
             rm -rf $nginx_systemd_file
-            echo -e "${OK} ${Green} 已卸载 Nginx ${Font}"
+            echo -e "${OK} ${Green} 已卸�?Nginx ${Font}"
             ;;
         *) ;;
 
@@ -1119,7 +1119,7 @@ uninstall_all() {
     fi
     [[ -d $v2ray_conf_dir ]] && rm -rf $v2ray_conf_dir
     [[ -d $web_dir ]] && rm -rf $web_dir
-    echo -e "${OK} ${Green} 是否卸载acme.sh及证书 [Y/N]? ${Font}"
+    echo -e "${OK} ${Green} 是否卸载acme.sh及证�?[Y/N]? ${Font}"
     read -r uninstall_acme
     case $uninstall_acme in
     [yY][eE][sS] | [yY])
@@ -1130,12 +1130,12 @@ uninstall_all() {
     *) ;;
     esac
     systemctl daemon-reload
-    echo -e "${OK} ${GreenBG} 已卸载 ${Font}"
+    echo -e "${OK} ${GreenBG} 已卸�?${Font}"
 }
 delete_tls_key_and_crt() {
     [[ -f $HOME/.acme.sh/acme.sh ]] && /root/.acme.sh/acme.sh uninstall >/dev/null 2>&1
     [[ -d $HOME/.acme.sh ]] && rm -rf "$HOME/.acme.sh"
-    echo -e "${OK} ${GreenBG} 已清空证书遗留文件 ${Font}"
+    echo -e "${OK} ${GreenBG} 已清空证书遗留文�?${Font}"
 }
 judge_mode() {
     if [ -f $v2ray_bin_dir ] || [ -f $v2ray_bin_dir_old/v2ray ]; then
@@ -1212,7 +1212,7 @@ update_sh() {
 
         esac
     else
-        echo -e "${OK} ${GreenBG} 当前版本为最新版本 ${Font}"
+        echo -e "${OK} ${GreenBG} 当前版本为最新版�?${Font}"
     fi
 
 }
@@ -1252,30 +1252,30 @@ menu() {
     echo -e "\t V2ray 安装管理脚本 ${Red}[${shell_version}]${Font}"
     echo -e "\t---authored by wulabing---"
     echo -e "\thttps://github.com/wulabing\n"
-    echo -e "当前已安装版本:${shell_mode}\n"
+    echo -e "当前已安装版本: ${shell_mode}\n"
 
-    echo -e "—————————————— 安装向导 ——————————————"""
+    echo -e "————————————— 安装向导 —————————————"
     echo -e "${Green}0.${Font}  升级 脚本"
     echo -e "${Green}1.${Font}  安装 V2Ray (Nginx+ws+tls)"
     echo -e "${Green}2.${Font}  安装 V2Ray (http/2)"
     echo -e "${Green}3.${Font}  升级 V2Ray core"
-    echo -e "—————————————— 配置变更 ——————————————"
+    echo -e "————————————— 配置变更 —————————————"
     echo -e "${Green}4.${Font}  变更 UUID"
     echo -e "${Green}6.${Font}  变更 port"
     echo -e "${Green}7.${Font}  变更 TLS 版本(仅ws+tls有效)"
     echo -e "${Green}18.${Font}  变更伪装路径"
-    echo -e "—————————————— 查看信息 ——————————————"
+    echo -e "————————————— 查看信息 —————————————"
     echo -e "${Green}8.${Font}  查看 实时访问日志"
     echo -e "${Green}9.${Font}  查看 实时错误日志"
     echo -e "${Green}10.${Font} 查看 V2Ray 配置信息"
-    echo -e "—————————————— 其他选项 ——————————————"
+    echo -e "————————————— 其他选项 —————————————"
     echo -e "${Green}11.${Font} 安装 4合1 bbr 锐速安装脚本"
     echo -e "${Green}12.${Font} 安装 MTproxy(支持TLS混淆)"
     echo -e "${Green}13.${Font} 证书 有效期更新"
     echo -e "${Green}14.${Font} 卸载 V2Ray"
     echo -e "${Green}15.${Font} 更新 证书crontab计划任务"
     echo -e "${Green}16.${Font} 清空 证书遗留文件"
-    echo -e "${Green}17.${Font} 退出 \n"
+    echo -e "${Green}17.${Font} 退出\n"
 
     read -rp "请输入数字：" menu_num
     case $menu_num in
@@ -1305,7 +1305,7 @@ menu() {
         ;;
     6)
         while true; do
-            read -rp "请输入连接端口:" port
+            read -rp "请输入连接端�?" port
             if validate_port "$port"; then
                 break
             fi
@@ -1360,7 +1360,7 @@ menu() {
         exit 0
         ;;
     18)
-        read -rp "请输入伪装路径(注意！不需要加斜杠 eg:ray):" camouflage_path
+        read -rp "请输入伪装路�?注意！不需要加斜杠 eg:ray):" camouflage_path
         modify_camouflage_path
         start_process_systemd
         ;;
