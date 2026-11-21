@@ -30,19 +30,25 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/ma
 > 无需域名和证书，伪装真实网站(默认 www.microsoft.com)，主动探测无特征，
 > 是当前抗封锁抗识别能力最强的方案。自动生成 UUID/密钥/shortId，输出客户端分享链接。
 
-**常用参数：**
+**常用参数：**（注意：`bash -c` 方式必须在脚本名后加 ` _ `，否则参数会丢失）
 
 ```bash
-# 指定端口（443 被占时用，如 NAT/家宽）
-bash -c "$(curl -fsSL .../reality_install.sh)" --port=8443
+# 指定端口（443 被占时用，如 NAT/家宽）—— 注意中间的下划线 _
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh)" _ --port=8443
 
 # 指定伪装站点（需支持 TLS1.3+h2）与 SNI
-bash -c "$(curl -fsSL .../reality_install.sh)" --dest=www.apple.com --sni=www.apple.com
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh)" _ --dest=www.apple.com --sni=www.apple.com
 
-# 查看状态 / 卸载
+# 查看状态 / 卸载（下载到本地后直接执行）
+curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh -o reality_install.sh && chmod +x reality_install.sh
 sudo ./reality_install.sh --status
 sudo ./reality_install.sh --remove
 ```
+
+> 💡 更推荐的方式：先下载脚本再执行，参数直接传，避免 `bash -c` 的占位符问题：
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh -o reality_install.sh && chmod +x reality_install.sh && sudo ./reality_install.sh --port=8443
+> ```
 
 ### 3. BBR 加速与优化（多发行版，内核 3.10+）
 

@@ -175,10 +175,22 @@ action_install() {
     check_systemd
     install_xray
 
-    # 端口冲突检查
+    # 端口冲突检查：443 被占(如装了 Nginx)时自动降级到 8443，其次依次探测 8443-8449
     if port_in_use "$PORT"; then
         if [[ "$PORT" == "443" ]]; then
-            warn "端口 ${PORT} 已被占用(可能装了 Nginx/其他服务),请用 --port 指定其他端口"
+            warn "端口 443 已被占用(可能装了 Nginx 等),自动降级..."
+            local new_port="" p2
+            for p2 in 8443 8444 8445 8446 8447 8448 8449 8888; do
+                if ! port_in_use "$p2"; then
+                    new_port="$p2"
+                    break
+                fi
+            done
+            if [[ -z "$new_port" ]]; then
+                die "端口 443 及 8443-8449/8888 均被占用,请用 --port 指定可用端口"
+            fi
+            PORT="$new_port"
+            warn "改用端口 $PORT"
         else
             die "端口 ${PORT} 已被占用,请用 --port 指定其他端口"
         fi
