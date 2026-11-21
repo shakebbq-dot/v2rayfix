@@ -1,56 +1,88 @@
-# V2Ray 安装脚本测试与修复项目
+# V2Ray & BBR 网络优化工具箱
 
-## 📁 项目说明
+[English](#english) | [中文](#chinese)
 
-本项目对 V2Ray 一键安装脚本进行了全面的问题分析和修复。
+<a name="chinese"></a>
+## 中文说明
 
-## 📂 文件说明
+一个集成了 **V2Ray 一键安装(修复版)** 与 **BBR 网络加速优化** 的 Linux 网络工具箱。
 
-### 1. `install.sh`
-- **类型：** 原始脚本
-- **来源：** 从 GitHub 下载的原始版本
-- **用途：** 作为问题分析的基准
+---
 
-### 2. `install_fixed.sh`
-- **类型：** 修复后的脚本
-- **说明：** 修复了14个关键问题
-- **改进：** 
-  - 修复严重bug
-  - 改进安全性
-  - 增强错误处理
-  - 提高兼容性
+## 📦 一键安装
 
-### 3. `问题分析报告.md`
-- **类型：** 详细的问题分析文档
-- **内容：** 
-  - 严重安全问题
-  - 兼容性问题
-  - 错误处理问题
-  - 代码质量问题
-  - 功能问题
-  - 性能问题
+### 1. V2Ray 一键安装（含 TLS + WS 伪装，修复 18 个问题）
 
-### 4. `修复说明.md`
-- **类型：** 修复说明文档
-- **内容：** 
-  - 所有修复的详细说明
-  - 修复前后代码对比
-  - 影响分析
-  - 使用建议
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/install.sh)"
+```
 
-### 5. `README.md`（本文件）
-- **类型：** 项目总览文档
+> 基于 wulabing/V2Ray_ws-tls_bash_onekey 修复版：自动输入验证、网络下载重试、
+> jemalloc 内存自适应编译、netcat 兼容、IPv6-only 支持等。
 
-## 🔍 主要修复内容
+### 2. BBR 加速与优化（多发行版，内核 3.10+）
 
-### 严重Bug（必须修复）
-1. ✅ 修复域名解析IP显示变量错误
-2. ✅ 修复base64编码跨平台兼容性问题
+```bash
+curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/bbr/bbr_install.sh -o bbr_install.sh \
+  && chmod +x bbr_install.sh && sudo ./bbr_install.sh
+```
+
+**常用命令（静默模式）：**
+
+```bash
+# 智能启用（自动选择最佳算法 bbr → cubic → reno）
+sudo ./bbr_install.sh enable --cc=auto --qdisc=auto
+
+# 指定启用 BBR + fq 队列
+sudo ./bbr_install.sh enable --cc=bbr --qdisc=fq
+
+# 应用系统优化（含 RTT 自适应 buffer）
+sudo ./bbr_install.sh optimize
+
+# 安装 XanMod 高性能内核（Ubuntu/Debian，自动按 CPU 微架构选包）
+sudo ./bbr_install.sh --install-xanmod
+
+# 查看当前状态
+sudo ./bbr_install.sh monitor
+
+# 还原/卸载优化
+sudo ./bbr_install.sh restore   # 或 ./uninstall.sh
+```
+
+---
+
+## 📂 项目结构
+
+```
+v2rayfix/
+├── install.sh                # V2Ray 一键安装（修复版）
+├── bbr/
+│   ├── bbr_install.sh        # BBR 优化主脚本 v2.0.0（推荐使用）
+│   ├── uninstall.sh          # BBR 卸载脚本
+│   ├── tcp.sh                # 旧版 BBR 脚本（BBR/魔改/BBRplus/Lotserver）
+│   ├── tcp_optimized.sh      # 旧版 TCP 优化脚本 v3.0.0
+│   ├── tcp_optimized_fixed.sh# 旧版 TCP 优化（修复版）
+│   └── ...                   # 其他参考脚本
+├── README.md                 # 本文件
+├── CHANGELOG.md              # 更新日志
+├── 问题分析报告.md           # V2Ray 脚本问题分析
+├── 修复说明.md               # V2Ray 修复详情
+├── 快速修复指南.md           # 快速修复指引
+└── jemalloc编译问题修复指南.md
+```
+
+---
+
+## 🔧 V2Ray 修复版主要改进
+
+### 严重 Bug（必须修复）
+1. ✅ 修复域名解析 IP 显示变量错误
+2. ✅ 修复 base64 编码跨平台兼容性问题
 3. ✅ 修复证书更新脚本路径错误
 
 ### 安全问题（高优先级）
 4. ✅ 改进防火墙处理（不直接关闭）
-5. ✅ 改进SELinux处理（询问用户，默认permissive）
+5. ✅ 改进 SELinux 处理（询问用户，默认 permissive）
 
 ### 功能改进（中优先级）
 6. ✅ 添加输入验证（域名、端口、UUID）
@@ -58,79 +90,52 @@
 8. ✅ 改进域名检查的错误处理
 9. ✅ 改进端口占用处理
 10. ✅ 确保日志目录存在
+11. ✅ 修复 netcat 包名兼容性问题
 
-### 代码质量（低优先级）
-11-14. ✅ 其他代码质量改进
-
-## 🚀 快速开始
-
-### 查看问题分析
-```bash
-cat 问题分析报告.md
-```
-
-### 查看修复说明
-```bash
-cat 修复说明.md
-```
-
-### 对比原脚本和修复脚本
-```bash
-diff install.sh install_fixed.sh
-```
-
-### 测试修复后的脚本（需要Linux环境）
-```bash
-chmod +x install_fixed.sh
-# 注意：请在测试环境中运行，不要在生产环境直接使用
-```
-
-## ⚠️ 重要提示
-
-1. **本脚本仅用于Linux系统**（Debian/Ubuntu/CentOS）
-2. **需要root权限**运行
-3. **建议在测试环境**中先验证
-4. **运行前请备份**重要数据
-5. **确保网络连接**稳定
-
-## 📊 修复统计
-
-- **总问题数：** 18个
-- **严重bug：** 3个
-- **安全问题：** 2个
-- **功能问题：** 9个（包括netcat兼容性和jemalloc编译问题）
-- **代码质量：** 4个
-
-## 🔗 相关链接
-
-- 原始脚本仓库：https://github.com/wulabing/V2Ray_ws-tls_bash_onekey
-- V2Ray官方文档：https://www.v2ray.com
-
-## 📝 测试建议
-
-### 测试环境要求
-- Ubuntu 20.04+ / Debian 11+ / CentOS 7+
-- Root权限
-- 稳定的网络连接
-- 至少2GB可用磁盘空间
-
-### 测试步骤
-1. 在测试VPS上创建快照备份
-2. 下载修复后的脚本
-3. 赋予执行权限
-4. 运行脚本并观察输出
-5. 验证所有功能是否正常
-6. 如有问题，恢复快照重试
-
-## 📅 更新日志
-
-### 2025-11-02
-- ✅ 完成脚本问题分析
-- ✅ 创建修复版本
-- ✅ 编写详细文档
+### 编译问题
+12. ✅ 智能计算编译线程数（避免内存不足）
+13. ✅ 改进 jemalloc 编译流程（添加降级机制）
+14. ✅ 动态调整 Nginx 配置（支持 jemalloc 可选）
 
 ---
 
-**项目状态：** ✅ 已完成  
-**最后更新：** 2025-11-02
+## 🚀 BBR 优化版功能
 
+- **多发行版支持**：Ubuntu/Debian/CentOS/RHEL/Fedora/Arch/openSUSE（特性按内核能力降级）
+- **智能算法选择**：自动选 BBR → CUBIC → Reno
+- **系统优化**：写入 `/etc/sysctl.d/99-bbr-optimizer.conf`（幂等、可回滚）
+- **资源限制**：写入 `/etc/security/limits.d/99-bbr-optimizer.conf`
+- **RTT 自适应**：可选 ping 探测，按延迟自动调整 rmem/wmem
+- **XanMod 内核**：自动检测 CPU 微架构（AVX512/AVX2/POPCNT）选 x64v1-v4 包
+- **完整回滚**：`restore`/`uninstall` 一键还原
+
+---
+
+## ⚠️ 重要提示
+
+1. 仅用于 Linux 系统（Debian/Ubuntu/CentOS 等）
+2. 需要 root 权限运行
+3. 建议先在测试环境验证，运行前备份重要数据
+
+## 🔗 相关链接
+
+- 原始 V2Ray 脚本：https://github.com/wulabing/V2Ray_ws-tls_bash_onekey
+- V2Ray 官方文档：https://www.v2ray.com
+
+---
+
+<a name="english"></a>
+## English
+
+A Linux network toolbox combining a **fixed V2Ray one-click installer** (18 issues fixed on top of wulabing's script) and a **cross-distro BBR optimization script**.
+
+### One-click installs
+
+```bash
+# V2Ray (WS+TLS)
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/install.sh)"
+
+# BBR optimization
+curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/bbr/bbr_install.sh -o bbr_install.sh \
+  && chmod +x bbr_install.sh && sudo ./bbr_install.sh
+```
