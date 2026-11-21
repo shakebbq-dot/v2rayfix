@@ -1,5 +1,10 @@
 # 更新日志
 
+## [2026-11-21] reality_install.sh: 默认端口改为 8443
+
+- 默认端口 **443 → 8443**,避开 Nginx 等服务的 443 占用(端口冲突时自动探测 8443-8449/8888/2053/2096)
+- README 同步更新端口示例(--port=9443 示例)
+
 ## [2026-11-21] 新增 VLESS + Reality 一键安装
 
 - **新增 `reality_install.sh`**：VLESS + TCP + XTLS-Vision + REALITY 一键部署

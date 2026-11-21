@@ -34,7 +34,7 @@ XRAY_CONF="/usr/local/etc/xray/config.json"
 XRAY_INSTALL_URL="https://github.com/XTLS/Xray-install/raw/main/install-release.sh"
 
 # ---- 默认值 ----
-PORT="443"
+PORT="8443"
 DEST="www.microsoft.com"
 SNI="www.microsoft.com"
 UUID=""
@@ -175,25 +175,22 @@ action_install() {
     check_systemd
     install_xray
 
-    # 端口冲突检查：443 被占(如装了 Nginx)时自动降级到 8443，其次依次探测 8443-8449
+    # 端口冲突检查：首选 8443，被占时自动探测 8443-8449/8888
     if port_in_use "$PORT"; then
-        if [[ "$PORT" == "443" ]]; then
-            warn "端口 443 已被占用(可能装了 Nginx 等),自动降级..."
-            local new_port="" p2
-            for p2 in 8443 8444 8445 8446 8447 8448 8449 8888; do
-                if ! port_in_use "$p2"; then
-                    new_port="$p2"
-                    break
-                fi
-            done
-            if [[ -z "$new_port" ]]; then
-                die "端口 443 及 8443-8449/8888 均被占用,请用 --port 指定可用端口"
+        # 被占用时自动探测备用端口(如用户 --port=443 撞上 Nginx)
+        warn "端口 ${PORT} 已被占用,自动探测备用端口..."
+        local new_port="" p2
+        for p2 in 8443 8444 8445 8446 8447 8448 8449 8888 2053 2096; do
+            if [[ "$p2" != "$PORT" ]] && ! port_in_use "$p2"; then
+                new_port="$p2"
+                break
             fi
-            PORT="$new_port"
-            warn "改用端口 $PORT"
-        else
-            die "端口 ${PORT} 已被占用,请用 --port 指定其他端口"
+        done
+        if [[ -z "$new_port" ]]; then
+            die "端口 ${PORT} 及备用端口列表均被占用,请用 --port 显式指定可用端口"
         fi
+        PORT="$new_port"
+        warn "改用端口 $PORT"
     fi
 
     # 生成或校验 UUID
@@ -299,7 +296,7 @@ usage() {
 用法: $0 [选项]
 
 选项:
-  --port=PORT       监听端口(默认 443, 若被占用请换)
+  --port=PORT       监听端口(默认 8443)
   --dest=HOST       Reality 伪装的真实站点(默认 www.microsoft.com, 需支持 TLS1.3+h2)
   --sni=HOST        SNI,默认同 --dest
   --uuid=UUID       指定 UUID(默认自动生成)

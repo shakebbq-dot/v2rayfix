@@ -33,8 +33,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/ma
 **常用参数：**（注意：`bash -c` 方式必须在脚本名后加 ` _ `，否则参数会丢失）
 
 ```bash
-# 指定端口（443 被占时用，如 NAT/家宽）—— 注意中间的下划线 _
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh)" _ --port=8443
+# 指定端口（默认已用 8443，避免撞上 443 的 Nginx；也可自定义）—— 注意中间的下划线 _
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh)" _ --port=9443
 
 # 指定伪装站点（需支持 TLS1.3+h2）与 SNI
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh)" _ --dest=www.apple.com --sni=www.apple.com
@@ -47,7 +47,7 @@ sudo ./reality_install.sh --remove
 
 > 💡 更推荐的方式：先下载脚本再执行，参数直接传，避免 `bash -c` 的占位符问题：
 > ```bash
-> curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh -o reality_install.sh && chmod +x reality_install.sh && sudo ./reality_install.sh --port=8443
+> curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh -o reality_install.sh && chmod +x reality_install.sh && sudo ./reality_install.sh --port=9443
 > ```
 
 ### 3. BBR 加速与优化（多发行版，内核 3.10+）
