@@ -200,10 +200,13 @@ action_install() {
     fi
 
     # 生成密钥对
+    # 兼容新旧两种输出格式:
+    #   旧: "Private key: xxx" / "Public key: yyy"
+    #   新(v26+): "PrivateKey: xxx" / "Password (PublicKey): yyy" (+ Hash32 行)
     local keyout priv pub
     keyout="$(gen_keypair)"
-    priv="$(printf '%s\n' "$keyout" | sed -n 's/^Private key: *//p')"
-    pub="$(printf '%s\n' "$keyout" | sed -n 's/^Public key: *//p')"
+    priv="$(printf '%s\n' "$keyout" | sed -nE 's/^Private ?[Kk]ey: *//p' | head -n1)"
+    pub="$(printf '%s\n' "$keyout" | sed -nE 's/^(Password *\(PublicKey\)|Public ?[Kk]ey): *//p' | head -n1)"
     [[ -n "$priv" && -n "$pub" ]] || die "x25519 密钥生成失败: $keyout"
     info "已生成 Reality 密钥对"
 
