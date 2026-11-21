@@ -1,5 +1,15 @@
 # 更新日志
 
+## [2026-11-21] 新增 VLESS + Reality 一键安装
+
+- **新增 `reality_install.sh`**：VLESS + TCP + XTLS-Vision + REALITY 一键部署
+  - 基于 XTLS/Xray-core 官方安装脚本，自动安装 Xray、生成 UUID/密钥/shortId
+  - 免域名、免证书，伪装真实网站（默认 www.microsoft.com，支持 --dest/--sni 自定义）
+  - 端口占用检测、配置合法性校验（xray run -test）、自动启动并设开机自启
+  - 输出标准客户端分享链接（v2rayN/NekoBox/Sing-box 等直接导入）
+  - 支持 --port / --dest / --sni / --uuid / --short-id / --status / --remove
+- **README 更新**：新增 Reality 一键命令与参数说明，中英文同步
+
 ## [2026-11-21] 项目重构：合并 ubuntu-bbr-optimizer
 
 - **合并 BBR 优化工具**：将原 ubuntu-bbr-optimizer 项目的 `bbr_install.sh`(v2.0.0) 与 `uninstall.sh` 并入本仓库 `bbr/` 目录

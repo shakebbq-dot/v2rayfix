@@ -20,7 +20,31 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/ma
 > 基于 wulabing/V2Ray_ws-tls_bash_onekey 修复版：自动输入验证、网络下载重试、
 > jemalloc 内存自适应编译、netcat 兼容、IPv6-only 支持等。
 
-### 2. BBR 加速与优化（多发行版，内核 3.10+）
+### 2. VLESS + Reality 一键安装（抗封锁最强，免域名免证书）
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh)"
+```
+
+> 基于 XTLS/Xray-core 官方脚本：VLESS + TCP + XTLS-Vision + REALITY 协议，
+> 无需域名和证书，伪装真实网站(默认 www.microsoft.com)，主动探测无特征，
+> 是当前抗封锁抗识别能力最强的方案。自动生成 UUID/密钥/shortId，输出客户端分享链接。
+
+**常用参数：**
+
+```bash
+# 指定端口（443 被占时用，如 NAT/家宽）
+bash -c "$(curl -fsSL .../reality_install.sh)" --port=8443
+
+# 指定伪装站点（需支持 TLS1.3+h2）与 SNI
+bash -c "$(curl -fsSL .../reality_install.sh)" --dest=www.apple.com --sni=www.apple.com
+
+# 查看状态 / 卸载
+sudo ./reality_install.sh --status
+sudo ./reality_install.sh --remove
+```
+
+### 3. BBR 加速与优化（多发行版，内核 3.10+）
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/bbr/bbr_install.sh -o bbr_install.sh \
@@ -55,7 +79,8 @@ sudo ./bbr_install.sh restore   # 或 ./uninstall.sh
 
 ```
 v2rayfix/
-├── install.sh                # V2Ray 一键安装（修复版）
+├── install.sh                # V2Ray 一键安装（WS+TLS，修复版）
+├── reality_install.sh        # VLESS+Vision+Reality 一键安装（抗封锁最强）
 ├── bbr/
 │   ├── bbr_install.sh        # BBR 优化主脚本 v2.0.0（推荐使用）
 │   ├── uninstall.sh          # BBR 卸载脚本
@@ -127,13 +152,16 @@ v2rayfix/
 <a name="english"></a>
 ## English
 
-A Linux network toolbox combining a **fixed V2Ray one-click installer** (18 issues fixed on top of wulabing's script) and a **cross-distro BBR optimization script**.
+A Linux network toolbox with three one-click scripts: a **fixed V2Ray WS+TLS installer** (18 issues fixed), a **VLESS+Vision+REALITY installer** (no domain/cert needed, best against censorship), and a **cross-distro BBR optimizer**.
 
 ### One-click installs
 
 ```bash
-# V2Ray (WS+TLS)
+# V2Ray (WS+TLS, fixed)
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/install.sh)"
+
+# VLESS + XTLS-Vision + REALITY (recommended, no domain needed)
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh)"
 
 # BBR optimization
 curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/bbr/bbr_install.sh -o bbr_install.sh \
