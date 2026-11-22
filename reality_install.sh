@@ -264,45 +264,61 @@ menu_change_port() {
     info "端口已改为 ${PORT}"
 }
 
-# ---- 推荐伪装站点候选(均支持 TLS1.3 + HTTP/2, 国内可访问, 大流量 CDN) ----
+# ---- 推荐伪装站点候选(均支持 TLS1.3 + HTTP/2, 大流量 CDN, 国内可访问) ----
+# 格式: "域名|说明"
 DEST_CANDIDATES=(
-    "www.microsoft.com"
-    "www.apple.com"
-    "www.icloud.com"
-    "swdlp.apple.com"
-    "www.samsung.com"
-    "www.nvidia.com"
-    "www.adobe.com"
-    "www.tesla.com"
-    "www.zoom.us"
-    "www.cloudflare.com"
+    "www.microsoft.com|微软官网(流量最大,首选)"
+    "www.apple.com|苹果官网(全球CDN)"
+    "www.icloud.com|苹果 iCloud(高流量)"
+    "swdlp.apple.com|苹果软件分发(高吞吐)"
+    "www.samsung.com|三星官网(大厂CDN)"
+    "www.nvidia.com|英伟达(热站CDN)"
+    "www.adobe.com|Adobe(订阅站点)"
+    "www.tesla.com|特斯拉官网"
+    "www.zoom.us|Zoom 视频会议"
+    "www.cloudflare.com|Cloudflare(网络安全)"
+    "www.discord.com|Discord(游戏社交)"
+    "www.reddit.com|Reddit(社交论坛)"
+    "www.wikipedia.org|维基百科(全球节点)"
+    "www.github.com|GitHub(开发者站点)"
+    "www.linkedin.com|LinkedIn(职场社交)"
+    "www.netflix.com|Netflix(流媒体)"
+    "www.tiktok.com|TikTok(短视频)"
+    "www.alibaba.com|阿里巴巴(电商)"
+    "www.bilibili.com|哔哩哔哩(国内视频)"
+    "www.baidu.com|百度(国内搜索)"
 )
 
 menu_change_dest() {
     echo
     echo -e "${BLUE}推荐伪装站点(支持 TLS1.3 + HTTP/2, 大流量 CDN):${PLAIN}"
+    echo -e "${BLUE}------------------------------------------------${PLAIN}"
     local i=1
-    for d in "${DEST_CANDIDATES[@]}"; do
+    for entry in "${DEST_CANDIDATES[@]}"; do
+        local d="${entry%%|*}"
+        local desc="${entry#*|}"
         local mark=""
         [[ "$d" == "$DEST" ]] && mark="  ← 当前"
-        echo "  $((i++)). $d$mark"
+        printf "  %2d. %-22s %s%s\n" "$i" "$d" "$desc" "$mark"
+        i=$((i + 1))
     done
-    echo "  0. 手动输入自定义域名"
+    echo -e "${BLUE}------------------------------------------------${PLAIN}"
+    echo "  c. 手动输入自定义域名"
     echo
-    read -rp "请选择伪装站点 [1-${#DEST_CANDIDATES[@]}, 0=自定义, 回车=保持]: " dest_choice
+    read -rp "请选择伪装站点 [1-${#DEST_CANDIDATES[@]}, c=自定义, 回车=保持]: " dest_choice
     if [[ -z "$dest_choice" ]]; then
         warn "未选择,保持 ${DEST}"
         return
     fi
     local new_dest=""
-    if [[ "$dest_choice" == "0" ]]; then
+    if [[ "$dest_choice" == "c" || "$dest_choice" == "C" ]]; then
         read -rp "请输入自定义伪装站点域名 [当前: ${DEST}]: " new_dest
         if [[ -z "$new_dest" ]]; then
             warn "未输入,保持 ${DEST}"
             return
         fi
     elif [[ "$dest_choice" =~ ^[0-9]+$ ]] && [[ "$dest_choice" -ge 1 ]] && [[ "$dest_choice" -le "${#DEST_CANDIDATES[@]}" ]]; then
-        new_dest="${DEST_CANDIDATES[$((dest_choice - 1))]}"
+        new_dest="${DEST_CANDIDATES[$((dest_choice - 1))]%%|*}"
     else
         warn "无效选择: $dest_choice"
         return
