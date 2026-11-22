@@ -289,6 +289,56 @@ DEST_CANDIDATES=(
     "www.baidu.com|百度(国内搜索)"
 )
 
+# ---- 伪装站点连通性检测 ----
+# 检测目标站是否支持 TLS1.3 + HTTP/2 + 可达。
+# 使用 openssl s_client 判断 TLS 版本, curl 判断 HTTP/2。
+# 结果: 0=全部通过, 1=部分失败(输出详细), 2=无法检测(工具缺失)
+check_site_support() {
+    local site="$1"
+    local ok=0
+    local has_openssl=0 has_curl=0
+    command -v openssl >/dev/null 2>&1 && has_openssl=1
+    command -v curl >/dev/null 2>&1 && has_curl=1
+
+    if [[ "$has_openssl" -eq 1 ]]; then
+        local out
+        out="$(echo | timeout 12 openssl s_client -connect "${site}:443" -servername "$site" 2>&1 )"
+        if echo "$out" | grep -q 'Protocol  : TLSv1.3'; then
+            echo "  ✓ TLS1.3 支持"
+        elif echo "$out" | grep -q 'Protocol  : TLSv1.2'; then
+            echo "  ✗ 仅 TLS1.2(Reality 需要 1.3)"
+            ok=1
+        else
+            echo "  ✗ 连接失败(网络不可达或超时,可能被墙)"
+            ok=1
+        fi
+    fi
+
+    if [[ "$has_curl" -eq 1 ]]; then
+        local h2
+        h2="$(curl -fsSI -m 12 --http2 -o /dev/null -w '%{http_version}' "https://${site}/" 2>/dev/null || true)"
+        case "$h2" in
+            2|2.0|3)
+                echo "  ✓ HTTP/2 支持(实际: $h2)"
+                ;;
+            "")
+                echo "  ✗ HTTP/2 连接失败(网络不可达或超时,可能被墙)"
+                ok=1
+                ;;
+            *)
+                echo "  ✗ HTTP 版本非 2/3(实际: ${h2:-无响应})"
+                ok=1
+                ;;
+        esac
+    fi
+
+    if [[ "$has_openssl" -eq 0 && "$has_curl" -eq 0 ]]; then
+        echo "  ⚠ 缺少 openssl/curl,无法检测(将直接采用)"
+        return 2
+    fi
+    return "$ok"
+}
+
 menu_change_dest() {
     echo
     echo -e "${BLUE}推荐伪装站点(支持 TLS1.3 + HTTP/2, 大流量 CDN):${PLAIN}"
@@ -303,11 +353,28 @@ menu_change_dest() {
         i=$((i + 1))
     done
     echo -e "${BLUE}------------------------------------------------${PLAIN}"
+    echo "  t. 测试候选站点连通性 (TLS1.3/HTTP2)"
     echo "  c. 手动输入自定义域名"
     echo
-    read -rp "请选择伪装站点 [1-${#DEST_CANDIDATES[@]}, c=自定义, 回车=保持]: " dest_choice
+    read -rp "请选择伪装站点 [1-${#DEST_CANDIDATES[@]}, t=测试, c=自定义, 回车=保持]: " dest_choice
     if [[ -z "$dest_choice" ]]; then
         warn "未选择,保持 ${DEST}"
+        return
+    fi
+    if [[ "$dest_choice" == "t" || "$dest_choice" == "T" ]]; then
+        echo
+        echo -e "${BLUE}===== 测试候选站点可用性 =====${PLAIN}"
+        local n=1
+        for entry in "${DEST_CANDIDATES[@]}"; do
+            local d="${entry%%|*}"
+            echo -e "\n[$n] $d"
+            check_site_support "$d"
+            n=$((n + 1))
+        done
+        echo -e "\n${BLUE}===== 测试完成 =====${PLAIN}"
+        read -rp "按回车键返回,重新选择站点..." _
+        echo
+        menu_change_dest
         return
     fi
     local new_dest=""
@@ -317,6 +384,8 @@ menu_change_dest() {
             warn "未输入,保持 ${DEST}"
             return
         fi
+        echo -e "${BLUE}检测 ${new_dest} 支持情况...${PLAIN}"
+        check_site_support "$new_dest" || true
     elif [[ "$dest_choice" =~ ^[0-9]+$ ]] && [[ "$dest_choice" -ge 1 ]] && [[ "$dest_choice" -le "${#DEST_CANDIDATES[@]}" ]]; then
         new_dest="${DEST_CANDIDATES[$((dest_choice - 1))]%%|*}"
     else
