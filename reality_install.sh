@@ -517,7 +517,8 @@ usage() {
   --uuid=UUID       指定 UUID(默认自动生成)
   --short-id=HEX    指定 shortId(默认自动生成)
   --menu            进入管理菜单(查看/改端口/改SNI/换UUID/卸载)
-  --reinstall       重新安装并重新生成全部密钥
+  --install         安装(未安装时用; 已安装时带确认)
+  --reinstall       重新安装并重新生成全部密钥(带确认)
   --remove          卸载(停止并禁用服务)
   --status          查看安装状态
   -h, --help        显示本帮助
@@ -533,6 +534,7 @@ main() {
             --uuid=*)      UUID="${1#*=}" ;;
             --short-id=*)  SHORT_ID="${1#*=}" ;;
             --menu)        ACTION="menu" ;;
+            --install)     ACTION="install" ;;
             --reinstall)   ACTION="reinstall" ;;
             --remove)      ACTION="remove" ;;
             --status)      ACTION="status" ;;
@@ -544,15 +546,30 @@ main() {
 
     case "$ACTION" in
         install)
-            if [[ -f "$XRAY_STATE" ]]; then
-                # 已安装过: 提示进入菜单而不是覆盖
-                info "检测到已安装(状态文件存在),进入管理菜单..."
-                action_menu
+            if [[ -x "$XRAY_BIN" ]]; then
+                # 显式 --install 但已安装: 给出选择而不是直接覆盖
+                echo
+                read -rp "检测到已安装 Xray。输入 y 重新安装(重新生成全部密钥,旧配置失效), 其他键进入管理菜单 [y/N]: " -n 1 -r
+                echo
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    action_install
+                else
+                    action_menu
+                fi
             else
                 action_install
             fi
             ;;
-        reinstall) action_install ;;
+        reinstall)
+            # 重装必须确认(会重新生成密钥)
+            if [[ -x "$XRAY_BIN" && -f "$XRAY_STATE" ]]; then
+                warn "重新安装将重新生成全部密钥,所有客户端旧配置将失效!"
+                read -rp "确认重新安装? [y/N] " -n 1 -r
+                echo
+                [[ $REPLY =~ ^[Yy]$ ]] || { info "已取消"; exit 0; }
+            fi
+            action_install
+            ;;
         menu)      action_menu ;;
         remove)    action_remove ;;
         status)    action_status ;;

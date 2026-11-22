@@ -98,24 +98,47 @@ main_menu() {
         echo -e "${BLUE}================================================${PLAIN}"
         read -rp "请输入选项 [0-2]: " choice
         case "$choice" in
-            1)
-                local r
-                r="$(get_reality_script)"
-                info "进入 VLESS+Reality 菜单: $r"
-                bash "$r" --menu
-                ;;
-            2)
-                local bb
-                bb="$(get_bbr_script)"
-                info "进入 BBR 菜单: $bb"
-                bash "$bb"
-                ;;
+            1) reality_submenu ;;
+            2) bbr_submenu ;;
             0) break ;;
             *) warn "无效选项" ;;
         esac
         echo
         read -rp "按回车键返回主菜单..." _
     done
+}
+
+reality_submenu() {
+    local r
+    r="$(get_reality_script)"
+    while true; do
+        clear
+        echo -e "${BLUE}================================================${PLAIN}"
+        echo -e "${BLUE}   VLESS+Reality 代理 ${PLAIN}"
+        echo -e "${BLUE}================================================${PLAIN}"
+        xray_status_line
+        echo -e "${BLUE}------------------------------------------------${PLAIN}"
+        echo "  1. 安装 VLESS+Reality 代理"
+        echo "  2. 管理菜单 (改端口/SNI/UUID/密钥/卸载)"
+        echo "  0. 返回主菜单"
+        echo -e "${BLUE}================================================${PLAIN}"
+        read -rp "请输入选项 [0-2]: " c
+        case "$c" in
+            1) bash "$r" --install ;;
+            2) bash "$r" --menu ;;
+            0) return ;;
+            *) warn "无效选项" ;;
+        esac
+        echo
+        read -rp "按回车键返回..." _
+    done
+}
+
+bbr_submenu() {
+    local bb
+    bb="$(get_bbr_script)"
+    info "进入 BBR 菜单: $bb"
+    bash "$bb"
 }
 
 main() {
