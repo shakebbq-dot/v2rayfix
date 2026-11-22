@@ -21,8 +21,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/ma
 
 | 选项 | 功能 |
 |---|---|
-| **1** | 进入 VLESS+Reality 代理管理菜单（安装/查看/改端口/改SNI/换UUID/卸载） |
+| **1** | 进入 VLESS+Reality 代理子菜单（安装/管理分开选） |
 | **2** | 进入 BBR 网络加速菜单（启用/优化/监控/内核） |
+| **3** | 进入系统常用操作（更新系统软件/升级 Xray/更新脚本/查资源/清理） |
 | **0** | 退出 |
 
 ### 1. V2Ray 一键安装（含 TLS + WS 伪装，修复 18 个问题）
