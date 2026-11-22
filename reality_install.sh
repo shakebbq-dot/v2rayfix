@@ -264,11 +264,51 @@ menu_change_port() {
     info "端口已改为 ${PORT}"
 }
 
+# ---- 推荐伪装站点候选(均支持 TLS1.3 + HTTP/2, 国内可访问, 大流量 CDN) ----
+DEST_CANDIDATES=(
+    "www.microsoft.com"
+    "www.apple.com"
+    "www.icloud.com"
+    "swdlp.apple.com"
+    "www.samsung.com"
+    "www.nvidia.com"
+    "www.adobe.com"
+    "www.tesla.com"
+    "www.zoom.us"
+    "www.cloudflare.com"
+)
+
 menu_change_dest() {
     echo
-    read -rp "请输入伪装站点域名 [当前: ${DEST}]: " new_dest
-    if [[ -z "$new_dest" ]]; then
-        warn "未输入,保持 ${DEST}"
+    echo -e "${BLUE}推荐伪装站点(支持 TLS1.3 + HTTP/2, 大流量 CDN):${PLAIN}"
+    local i=1
+    for d in "${DEST_CANDIDATES[@]}"; do
+        local mark=""
+        [[ "$d" == "$DEST" ]] && mark="  ← 当前"
+        echo "  $((i++)). $d$mark"
+    done
+    echo "  0. 手动输入自定义域名"
+    echo
+    read -rp "请选择伪装站点 [1-${#DEST_CANDIDATES[@]}, 0=自定义, 回车=保持]: " dest_choice
+    if [[ -z "$dest_choice" ]]; then
+        warn "未选择,保持 ${DEST}"
+        return
+    fi
+    local new_dest=""
+    if [[ "$dest_choice" == "0" ]]; then
+        read -rp "请输入自定义伪装站点域名 [当前: ${DEST}]: " new_dest
+        if [[ -z "$new_dest" ]]; then
+            warn "未输入,保持 ${DEST}"
+            return
+        fi
+    elif [[ "$dest_choice" =~ ^[0-9]+$ ]] && [[ "$dest_choice" -ge 1 ]] && [[ "$dest_choice" -le "${#DEST_CANDIDATES[@]}" ]]; then
+        new_dest="${DEST_CANDIDATES[$((dest_choice - 1))]}"
+    else
+        warn "无效选择: $dest_choice"
+        return
+    fi
+    if [[ "$new_dest" == "$DEST" ]]; then
+        info "伪装站点未变化,保持 ${DEST}"
         return
     fi
     DEST="$new_dest"
