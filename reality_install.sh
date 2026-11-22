@@ -191,6 +191,33 @@ load_state() {
     [[ -f "$XRAY_STATE" ]] || return 1
     # shellcheck disable=SC1090
     source "$XRAY_STATE"
+    # 防御: 状态文件里可能是旧版误存的非法值(如域名被写成 "0"/"3")
+    local valid_dom
+    valid_dom='^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$'
+    local changed=0
+    if [[ ! "$DEST" =~ $valid_dom ]]; then
+        warn "状态文件中的伪装站点非法 ('${DEST}'),已重置为默认"
+        DEST="www.microsoft.com"
+        changed=1
+    fi
+    if [[ ! "$SNI" =~ $valid_dom ]]; then
+        warn "状态文件中的 SNI 非法 ('${SNI}'),已同步为 DEST"
+        SNI="$DEST"
+        changed=1
+    fi
+    if [[ ! "$PORT" =~ ^[0-9]+$ ]] || [[ "$PORT" -lt 1 ]] || [[ "$PORT" -gt 65535 ]]; then
+        warn "状态文件中的端口非法 ('${PORT}'),已重置为 8443"
+        PORT="8443"
+        changed=1
+    fi
+    if [[ -z "${PRIV:-}" || -z "${PUB:-}" ]]; then
+        warn "状态文件缺少密钥对,无法继续管理,请重新安装(主菜单→1→1)"
+        return 1
+    fi
+    if [[ "$changed" -eq 1 ]]; then
+        # 落盘修正,避免下次仍读到坏值
+        save_state "$PRIV" "$PUB"
+    fi
     return 0
 }
 
@@ -384,12 +411,15 @@ menu_change_dest() {
             warn "未输入,保持 ${DEST}"
             return
         fi
-        echo -e "${BLUE}检测 ${new_dest} 支持情况...${PLAIN}"
-        check_site_support "$new_dest" || true
     elif [[ "$dest_choice" =~ ^[0-9]+$ ]] && [[ "$dest_choice" -ge 1 ]] && [[ "$dest_choice" -le "${#DEST_CANDIDATES[@]}" ]]; then
         new_dest="${DEST_CANDIDATES[$((dest_choice - 1))]%%|*}"
     else
         warn "无效选择: $dest_choice"
+        return
+    fi
+    # 域名合法性校验: 仅允许正常 hostname, 拒绝数字/空/非法字符
+    if [[ ! "$new_dest" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; then
+        err "域名格式非法: '$new_dest' (应类似 www.example.com 或 example.com)"
         return
     fi
     if [[ "$new_dest" == "$DEST" ]]; then

@@ -32,13 +32,11 @@ require_root() {
 }
 
 # 下载仓库脚本到临时位置(支持在任意目录一键使用)
+# 注意: 总是强制重新下载, 避免 /tmp 缓存旧版脚本导致功能缺失
 fetch_script() {
     local name="$1"  # reality_install.sh | bbr/bbr_install.sh
     local dest="$2"
-    if [[ -f "$dest" ]]; then
-        echo "$dest"
-        return 0
-    fi
+    rm -f "$dest"
     info "下载 $name ..."
     curl -fsSL "$GITHUB_RAW/$name" -o "$dest" 2>/dev/null || { rm -f "$dest"; return 1; }
     chmod +x "$dest"
