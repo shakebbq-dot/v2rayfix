@@ -40,27 +40,33 @@ fetch_script() {
         return 0
     fi
     info "下载 $name ..."
-    curl -fsSL "$GITHUB_RAW/$name" -o "$dest" 2>/dev/null || return 1
+    curl -fsSL "$GITHUB_RAW/$name" -o "$dest" 2>/dev/null || { rm -f "$dest"; return 1; }
     chmod +x "$dest"
     echo "$dest"
 }
 
 get_reality_script() {
+    local dest
     if [[ -f "$REALITY_SCRIPT" ]]; then
-        echo "$REALITY_SCRIPT"
+        dest="$REALITY_SCRIPT"
     else
-        fetch_script "reality_install.sh" "/tmp/v2rayfix_reality_install.sh" || die "Reality 脚本下载失败"
+        dest="/tmp/v2rayfix_reality_install.sh"
+        fetch_script "reality_install.sh" "$dest" >/dev/null || die "Reality 脚本下载失败"
     fi
+    echo "$dest"
 }
 
 get_bbr_script() {
+    local dest
     if [[ -f "$BBR_SCRIPT" ]]; then
-        echo "$BBR_SCRIPT"
+        dest="$BBR_SCRIPT"
     elif [[ -f "$BBR_SCRIPT_FLAT" ]]; then
-        echo "$BBR_SCRIPT_FLAT"
+        dest="$BBR_SCRIPT_FLAT"
     else
-        fetch_script "bbr/bbr_install.sh" "/tmp/v2rayfix_bbr_install.sh" || die "BBR 脚本下载失败"
+        dest="/tmp/v2rayfix_bbr_install.sh"
+        fetch_script "bbr/bbr_install.sh" "$dest" >/dev/null || die "BBR 脚本下载失败"
     fi
+    echo "$dest"
 }
 
 xray_status_line() {
