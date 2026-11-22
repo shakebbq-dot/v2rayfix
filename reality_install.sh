@@ -28,9 +28,10 @@ warn()  { echo -e "${YELLOW}[警告]${PLAIN} $*"; }
 err()   { echo -e "${RED}[错误]${PLAIN} $*"; }
 die()   { err "$*"; exit 1; }
 
-VERSION="1.0.0"
+VERSION="2.0.0"
 XRAY_BIN="/usr/local/bin/xray"
 XRAY_CONF="/usr/local/etc/xray/config.json"
+XRAY_STATE="/usr/local/etc/xray/reality.env"
 XRAY_INSTALL_URL="https://github.com/XTLS/Xray-install/raw/main/install-release.sh"
 
 # ---- 默认值 ----
@@ -170,6 +171,189 @@ show_client_link() {
     echo "$link"
 }
 
+# ---- 状态保存/加载(供管理菜单使用) ----
+save_state() {
+    local priv="$1" pub="$2"
+    mkdir -p "$(dirname "$XRAY_STATE")"
+    cat > "$XRAY_STATE" <<EOF
+PORT=${PORT}
+DEST=${DEST}
+SNI=${SNI}
+UUID=${UUID}
+SHORT_ID=${SHORT_ID}
+PRIV=${priv}
+PUB=${pub}
+EOF
+    chmod 600 "$XRAY_STATE" 2>/dev/null || true
+}
+
+load_state() {
+    [[ -f "$XRAY_STATE" ]] || return 1
+    # shellcheck disable=SC1090
+    source "$XRAY_STATE"
+    return 0
+}
+
+require_installed() {
+    [[ -x "$XRAY_BIN" ]] || die "Xray 未安装,请先运行安装(不带参数运行本脚本)"
+    load_state || die "未找到安装状态文件($XRAY_STATE),请重新安装"
+}
+
+restart_xray() {
+    if ! systemctl restart xray; then
+        die "Xray 重启失败,请检查: journalctl -u xray -n 50 --no-pager"
+    fi
+    sleep 1
+    if systemctl is-active --quiet xray; then
+        info "Xray 服务已重启"
+    else
+        warn "服务未正常运行,请检查: journalctl -u xray -n 50 --no-pager"
+    fi
+}
+
+apply_and_restart() {
+    # 用当前全局变量(PORT/DEST/SNI/UUID/SHORT_ID)重写配置并重启
+    make_config "$PRIV"
+    if "$XRAY_BIN" run -test -config "$XRAY_CONF" >/dev/null 2>&1; then
+        info "配置校验通过"
+    else
+        die "配置校验失败,改动未生效: $XRAY_BIN run -test -config $XRAY_CONF"
+    fi
+    save_state "$PRIV" "$PUB"
+    restart_xray
+}
+
+get_server_ip() {
+    local ip=""
+    ip="$(get_public_ip)"
+    if [[ -z "$ip" ]]; then
+        ip="<SERVER_IP>"
+    fi
+    echo "$ip"
+}
+
+show_current() {
+    local ip
+    ip="$(get_server_ip)"
+    echo -e "${BLUE}================ 当前连接信息 ================${PLAIN}"
+    echo "  端口:     ${PORT}"
+    echo "  协议:     VLESS + TCP + Vision + Reality"
+    echo "  地址:     ${ip}"
+    echo "  UUID:     ${UUID}"
+    echo "  SNI:      ${SNI}"
+    echo "  shortId:  ${SHORT_ID}"
+    echo
+    echo "客户端分享链接:"
+    show_client_link "$PUB" "$ip"
+    echo -e "${BLUE}===============================================${PLAIN}"
+}
+
+menu_change_port() {
+    echo
+    read -rp "请输入新的监听端口 [当前: ${PORT}]: " new_port
+    if [[ -z "$new_port" ]]; then
+        warn "未输入,保持 ${PORT}"
+        return
+    fi
+    [[ "$new_port" =~ ^[0-9]+$ && "$new_port" -ge 1 && "$new_port" -le 65535 ]] || die "无效端口: $new_port"
+    if port_in_use "$new_port"; then
+        die "端口 $new_port 已被占用"
+    fi
+    PORT="$new_port"
+    apply_and_restart
+    info "端口已改为 ${PORT}"
+}
+
+menu_change_dest() {
+    echo
+    read -rp "请输入伪装站点域名 [当前: ${DEST}]: " new_dest
+    if [[ -z "$new_dest" ]]; then
+        warn "未输入,保持 ${DEST}"
+        return
+    fi
+    DEST="$new_dest"
+    SNI="$new_dest"
+    apply_and_restart
+    info "伪装站点已改为 ${DEST}(SNI 同步)"
+}
+
+menu_change_uuid() {
+    echo
+    local new_uuid
+    new_uuid="$(gen_uuid)"
+    read -rp "按回车生成新 UUID,或直接粘贴自定义 UUID [回车=自动生成]: " new_uuid
+    if [[ -z "$new_uuid" ]]; then
+        new_uuid="$(gen_uuid)"
+    fi
+    UUID="$new_uuid"
+    apply_and_restart
+    info "UUID 已更新: ${UUID}"
+}
+
+menu_regenerate() {
+    warn "将重新生成全部密钥(UUID/密钥对/shortId),旧客户端配置将全部失效!"
+    read -rp "确认继续? [y/N] " -n 1 -r
+    echo
+    [[ $REPLY =~ ^[Yy]$ ]] || { info "已取消"; return; }
+    action_install
+}
+
+menu_uninstall() {
+    warn "将停止并禁用 Xray 服务(保留配置与二进制)"
+    read -rp "确认卸载? [y/N] " -n 1 -r
+    echo
+    [[ $REPLY =~ ^[Yy]$ ]] || { info "已取消"; return; }
+    action_remove
+    info "卸载完成"
+}
+
+menu_status() {
+    action_status
+}
+
+action_menu() {
+    require_root
+    require_installed
+    while true; do
+        clear
+        echo -e "${BLUE}================================================${PLAIN}"
+        echo -e "${BLUE}   VLESS + Reality 管理菜单 v${VERSION}   ${PLAIN}"
+        echo -e "${BLUE}================================================${PLAIN}"
+        if systemctl is-active --quiet xray 2>/dev/null; then
+            echo -e "  Xray 服务: ${GREEN}运行中${PLAIN}"
+        else
+            echo -e "  Xray 服务: ${RED}未运行${PLAIN}"
+        fi
+        echo "  端口: ${PORT}  SNI: ${SNI}"
+        echo -e "${BLUE}------------------------------------------------${PLAIN}"
+        echo "  1. 查看当前配置与分享链接"
+        echo "  2. 修改端口"
+        echo "  3. 修改伪装站点(SNI)"
+        echo "  4. 更换 UUID"
+        echo "  5. 重新生成全部密钥(旧配置全部失效!)"
+        echo "  6. 查看服务状态"
+        echo "  7. 重启 Xray 服务"
+        echo "  8. 卸载"
+        echo "  0. 退出"
+        echo -e "${BLUE}================================================${PLAIN}"
+        read -rp "请输入选项 [0-8]: " choice
+        case "$choice" in
+            1) show_current ;;
+            2) menu_change_port ;;
+            3) menu_change_dest ;;
+            4) menu_change_uuid ;;
+            5) menu_regenerate ;;
+            6) menu_status ;;
+            7) restart_xray ;;
+            8) menu_uninstall ;;
+            0) break ;;
+            *) warn "无效选项" ;;
+        esac
+        echo
+        read -rp "按回车键返回菜单..." _
+    done
+}
+
 action_install() {
     require_root
     check_systemd
@@ -220,6 +404,9 @@ action_install() {
     mkdir -p "$(dirname "$XRAY_CONF")"
     make_config "$priv"
     info "配置文件已写入: $XRAY_CONF"
+    # 保存状态(供管理菜单读取/修改)
+    save_state "$priv" "$pub"
+    info "状态已保存: $XRAY_STATE"
 
     # 校验配置
     if "$XRAY_BIN" run -test -config "$XRAY_CONF" >/dev/null 2>&1; then
@@ -263,6 +450,16 @@ action_install() {
     echo
     echo "注意: 私钥仅在服务器端,客户端只需要公钥(pbk)。建议立即复制保存以上信息。"
     echo -e "${BLUE}===========================================${PLAIN}"
+
+    # 安装完成后进入管理菜单
+    echo
+    read -rp "是否进入管理菜单? [Y/n]: " -n 1 -r
+    echo
+    if [[ -z "$REPLY" || $REPLY =~ ^[Yy]$ ]]; then
+        action_menu
+    else
+        info "管理菜单随时可用: $0(不带参数运行即进入菜单)"
+    fi
 }
 
 action_remove() {
@@ -298,12 +495,18 @@ usage() {
     cat <<EOF
 用法: $0 [选项]
 
+不带参数运行:
+  - Xray 未安装 -> 执行安装(装完自动进入管理菜单)
+  - Xray 已安装 -> 直接进入管理菜单
+
 选项:
   --port=PORT       监听端口(默认 8443)
   --dest=HOST       Reality 伪装的真实站点(默认 www.microsoft.com, 需支持 TLS1.3+h2)
   --sni=HOST        SNI,默认同 --dest
   --uuid=UUID       指定 UUID(默认自动生成)
   --short-id=HEX    指定 shortId(默认自动生成)
+  --menu            进入管理菜单(查看/改端口/改SNI/换UUID/卸载)
+  --reinstall       重新安装并重新生成全部密钥
   --remove          卸载(停止并禁用服务)
   --status          查看安装状态
   -h, --help        显示本帮助
@@ -318,6 +521,8 @@ main() {
             --sni=*)       SNI="${1#*=}" ;;
             --uuid=*)      UUID="${1#*=}" ;;
             --short-id=*)  SHORT_ID="${1#*=}" ;;
+            --menu)        ACTION="menu" ;;
+            --reinstall)   ACTION="reinstall" ;;
             --remove)      ACTION="remove" ;;
             --status)      ACTION="status" ;;
             -h|--help)     usage; exit 0 ;;
@@ -327,9 +532,19 @@ main() {
     done
 
     case "$ACTION" in
-        install) action_install ;;
-        remove)  action_remove ;;
-        status)  action_status ;;
+        install)
+            if [[ -f "$XRAY_STATE" ]]; then
+                # 已安装过: 提示进入菜单而不是覆盖
+                info "检测到已安装(状态文件存在),进入管理菜单..."
+                action_menu
+            else
+                action_install
+            fi
+            ;;
+        reinstall) action_install ;;
+        menu)      action_menu ;;
+        remove)    action_remove ;;
+        status)    action_status ;;
     esac
 }
 
