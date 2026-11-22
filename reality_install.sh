@@ -313,7 +313,12 @@ menu_status() {
 
 action_menu() {
     require_root
-    require_installed
+    # 不再强制已安装: 菜单包含安装/重装入口
+    local installed=0
+    if [[ -x "$XRAY_BIN" ]]; then
+        installed=1
+        load_state || true   # 有状态就读,没有也可进菜单(安装入口)
+    fi
     while true; do
         clear
         echo -e "${BLUE}================================================${PLAIN}"
@@ -321,8 +326,10 @@ action_menu() {
         echo -e "${BLUE}================================================${PLAIN}"
         if systemctl is-active --quiet xray 2>/dev/null; then
             echo -e "  Xray 服务: ${GREEN}运行中${PLAIN}"
-        else
+        elif [[ "$installed" -eq 1 ]]; then
             echo -e "  Xray 服务: ${RED}未运行${PLAIN}"
+        else
+            echo -e "  Xray 服务: ${YELLOW}未安装${PLAIN}"
         fi
         echo "  端口: ${PORT}  SNI: ${SNI}"
         echo -e "${BLUE}------------------------------------------------${PLAIN}"
@@ -334,18 +341,22 @@ action_menu() {
         echo "  6. 查看服务状态"
         echo "  7. 重启 Xray 服务"
         echo "  8. 卸载"
+        if [[ "$installed" -eq 0 ]]; then
+            echo "  9. 安装/重装 VLESS+Reality"
+        fi
         echo "  0. 退出"
         echo -e "${BLUE}================================================${PLAIN}"
-        read -rp "请输入选项 [0-8]: " choice
+        read -rp "请输入选项 [0-9]: " choice
         case "$choice" in
-            1) show_current ;;
-            2) menu_change_port ;;
-            3) menu_change_dest ;;
-            4) menu_change_uuid ;;
-            5) menu_regenerate ;;
+            1) [[ "$installed" -eq 1 ]] && show_current || warn "未安装,请选 9 安装" ;;
+            2) [[ "$installed" -eq 1 ]] && menu_change_port || warn "未安装,请选 9 安装" ;;
+            3) [[ "$installed" -eq 1 ]] && menu_change_dest || warn "未安装,请选 9 安装" ;;
+            4) [[ "$installed" -eq 1 ]] && menu_change_uuid || warn "未安装,请选 9 安装" ;;
+            5) [[ "$installed" -eq 1 ]] && menu_regenerate || warn "未安装,请选 9 安装" ;;
             6) menu_status ;;
-            7) restart_xray ;;
-            8) menu_uninstall ;;
+            7) [[ "$installed" -eq 1 ]] && restart_xray || warn "未安装,请选 9 安装" ;;
+            8) [[ "$installed" -eq 1 ]] && menu_uninstall || warn "未安装,请选 9 安装" ;;
+            9) [[ "$installed" -eq 0 ]] && { action_install; installed=1; load_state || true; } ;;
             0) break ;;
             *) warn "无效选项" ;;
         esac

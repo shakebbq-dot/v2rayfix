@@ -5,11 +5,25 @@
 <a name="chinese"></a>
 ## 中文说明
 
-一个集成了 **V2Ray 一键安装(修复版)** 与 **BBR 网络加速优化** 的 Linux 网络工具箱。
+一个集成了 **V2Ray 一键安装(修复版)**、**VLESS+Reality 抗封锁代理** 与 **BBR 网络加速优化** 的 Linux 网络工具箱。
 
 ---
 
 ## 📦 一键安装
+
+### 0. 统一管理菜单（推荐入口，整合全部功能）
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/install_menu.sh)"
+```
+
+进入主菜单后（同时显示当前服务状态）：
+
+| 选项 | 功能 |
+|---|---|
+| **1** | 进入 VLESS+Reality 代理管理菜单（安装/查看/改端口/改SNI/换UUID/卸载） |
+| **2** | 进入 BBR 网络加速菜单（启用/优化/监控/内核） |
+| **0** | 退出 |
 
 ### 1. V2Ray 一键安装（含 TLS + WS 伪装，修复 18 个问题）
 
@@ -85,10 +99,11 @@ sudo ./bbr_install.sh restore   # 或 ./uninstall.sh
 
 ```
 v2rayfix/
+├── install_menu.sh           # 统一管理菜单（Reality + BBR 入口）
 ├── install.sh                # V2Ray 一键安装（WS+TLS，修复版）
-├── reality_install.sh        # VLESS+Vision+Reality 一键安装（抗封锁最强）
+├── reality_install.sh        # VLESS+Vision+Reality 一键安装（抗封锁最强）+ 管理菜单
 ├── bbr/
-│   ├── bbr_install.sh        # BBR 优化主脚本 v2.0.0（推荐使用）
+│   ├── bbr_install.sh        # BBR 优化主脚本 v2.0.0（交互菜单）
 │   ├── uninstall.sh          # BBR 卸载脚本
 │   ├── tcp.sh                # 旧版 BBR 脚本（BBR/魔改/BBRplus/Lotserver）
 │   ├── tcp_optimized.sh      # 旧版 TCP 优化脚本 v3.0.0
@@ -163,10 +178,10 @@ A Linux network toolbox with three one-click scripts: a **fixed V2Ray WS+TLS ins
 ### One-click installs
 
 ```bash
-# V2Ray (WS+TLS, fixed)
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/install.sh)"
+# Unified menu (recommended): Reality proxy + BBR acceleration
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/install_menu.sh)"
 
-# VLESS + XTLS-Vision + REALITY (recommended, no domain needed)
+# VLESS + XTLS-Vision + REALITY (no domain needed)
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/shakebbq-dot/v2rayfix/main/reality_install.sh)"
 
 # BBR optimization
